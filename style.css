@@ -387,6 +387,27 @@ select{font-family:inherit;}
 .confetti{position:absolute;left:50%;top:50%;font-size:20px;transform:translate(-50%,-50%);pointer-events:none;animation:burst .9s ease-out forwards;z-index:5;}
 @keyframes burst{to{transform:translate(calc(-50% + var(--tx)),calc(-50% + var(--ty))) scale(.3);opacity:0;}}
 
+/* ===== 确认弹层（替代原生 confirm） ===== */
+.modal-mask{
+  position:fixed;inset:0;background:rgba(17,24,39,.45);
+  display:flex;align-items:center;justify-content:center;z-index:70;
+  opacity:0;pointer-events:none;transition:.2s;backdrop-filter:blur(2px);
+}
+.modal-mask.show{opacity:1;pointer-events:auto;}
+.modal{
+  width:84%;max-width:320px;background:#fff;border-radius:var(--radius);
+  padding:22px 20px 16px;text-align:center;box-shadow:var(--shadow-lg);
+  transform:translateY(8px) scale(.97);transition:.2s;
+}
+.modal-mask.show .modal{transform:translateY(0) scale(1);}
+.modal-title{font-size:17px;font-weight:800;margin-bottom:8px;}
+.modal-msg{font-size:14px;color:var(--muted);margin-bottom:18px;line-height:1.5;}
+.modal-actions{display:flex;gap:10px;}
+.modal-btn{flex:1;padding:11px 0;border-radius:999px;font-size:15px;font-weight:700;transition:.15s;}
+.modal-btn:active{transform:scale(.96);}
+.modal-btn.ghost{background:var(--bg);color:var(--text);}
+.modal-btn.danger{background:var(--c-red);color:#fff;box-shadow:0 6px 16px rgba(239,68,68,.35);}
+
 /* ===== 响应式断点 ===== */
 @media (min-width:768px){
   .app{max-width:560px;}

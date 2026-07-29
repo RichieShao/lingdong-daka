@@ -368,13 +368,15 @@
     if (currentView === 'home') renderHome();
   }
   function deleteSubject(id) {
-    if (state.checkins.some(c => c.subjectId === id) || state.tasks.some(t => t.subjectId === id)) {
-      if (!confirm('该科目下有关联的打卡/任务记录，删除后记录将显示为「已删科目」。确定删除？')) return;
-    }
-    state.subjects = state.subjects.filter(s => s.id !== id);
-    save(); renderMe();
-    if (currentView === 'home') renderHome();
-    if (currentView === 'checkin') renderCheckin();
+    const hasRel = state.checkins.some(c => c.subjectId === id) || state.tasks.some(t => t.subjectId === id);
+    const doDelete = () => {
+      state.subjects = state.subjects.filter(s => s.id !== id);
+      save(); renderMe();
+      if (currentView === 'home') renderHome();
+      if (currentView === 'checkin') renderCheckin();
+    };
+    if (hasRel) confirmDialog('删除科目', '该科目下有关联的打卡/任务记录，删除后历史会显示为「已删科目」。确定删除？', doDelete);
+    else doDelete();
   }
   function deleteCountdown(id) {
     state.countdowns = state.countdowns.filter(c => c.id !== id);
@@ -382,9 +384,10 @@
     if (currentView === 'home') renderHome();
   }
   function resetAll() {
-    if (!confirm('确定清空所有数据？此操作不可恢复。')) return;
-    state = defaultState(); save();
-    toast('已清空'); switchView('home');
+    confirmDialog('清空所有数据', '将清空科目、任务、打卡、倒数日、积分与流水等全部数据，此操作不可恢复。', () => {
+      state = defaultState(); save();
+      toast('已清空全部数据'); switchView('home');
+    });
   }
 
   /* ---------- 番茄钟（专注） ---------- */
@@ -560,6 +563,19 @@
       d.classList.add('sel'); pick = d.dataset.c;
     });
     document.getElementById('f-submit').onclick = () => addCountdown(document.getElementById('f-title').value, document.getElementById('f-date').value, pick);
+  }
+
+  /* ---------- 应用内确认弹层（替代原生 confirm） ---------- */
+  function confirmDialog(title, msg, onOk) {
+    const mask = document.getElementById('confirmMask');
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMsg').textContent = msg;
+    const ok = document.getElementById('confirmOk');
+    const cancel = document.getElementById('confirmCancel');
+    mask.classList.add('show');
+    ok.onclick = () => { mask.classList.remove('show'); onOk(); };
+    cancel.onclick = () => { mask.classList.remove('show'); };
+    mask.onclick = (e) => { if (e.target === mask) mask.classList.remove('show'); };
   }
 
   /* ---------- 事件绑定 ---------- */
