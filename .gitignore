@@ -1,0 +1,7 @@
+# 系统/编辑器
+.DS_Store
+Thumbs.db
+*.swp
+
+# 工作区记忆（不纳入部署）
+.workbuddy/

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#6366f1" />
+  <title>灵动打卡 · 学习激励小助手</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- 顶部栏 -->
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-logo">灵</span>
+        <span class="brand-name">灵动打卡</span>
+      </div>
+      <div class="points-pill" id="pointsPill" title="积分余额">
+        <span class="star">⭐</span><span id="pointsBalance">0</span>
+      </div>
+    </header>
+
+    <!-- 视图区 -->
+    <main class="views">
+      <!-- 首页 -->
+      <section class="view view-home active" id="view-home">
+        <!-- 走马灯 -->
+        <div class="marquee card-glass" id="marquee">
+          <div class="marquee-head">
+            <span class="marquee-subject" id="marqueeSubject">语文</span>
+            <span class="marquee-tag" id="marqueeType">名言</span>
+          </div>
+          <div class="marquee-viewport">
+            <div class="marquee-track" id="marqueeTrack"></div>
+          </div>
+          <div class="marquee-ctrl">
+            <button class="marq-btn" id="marqPrev" aria-label="上一条">‹</button>
+            <div class="marquee-dots" id="marqueeDots"></div>
+            <button class="marq-btn" id="marqNext" aria-label="下一条">›</button>
+          </div>
+        </div>
+
+        <!-- 今日概览 -->
+        <div class="home-stats" id="homeStats"></div>
+
+        <!-- 今日待打卡 -->
+        <div class="block">
+          <div class="block-title">今日待打卡</div>
+          <div class="subject-grid" id="homeSubjects"></div>
+        </div>
+
+        <!-- 近期任务 -->
+        <div class="block">
+          <div class="block-title">近期任务</div>
+          <div class="task-list" id="homeTasks"></div>
+        </div>
+
+        <!-- 最新积分 -->
+        <div class="block">
+          <div class="block-title">最新积分</div>
+          <div class="flow-list" id="homeFlows"></div>
+        </div>
+      </section>
+
+      <!-- 打卡 -->
+      <section class="view" id="view-checkin">
+        <div class="block">
+          <div class="block-title">选择科目打卡</div>
+          <div class="subject-grid" id="checkinSubjects"></div>
+        </div>
+        <div class="block">
+          <div class="block-head">
+            <div class="block-title">今日打卡记录</div>
+            <span class="block-hint" id="todayCount">0 次</span>
+          </div>
+          <div class="checkin-list" id="checkinToday"></div>
+        </div>
+      </section>
+
+      <!-- 任务 -->
+      <section class="view" id="view-tasks">
+        <div class="block">
+          <div class="block-head">
+            <div class="block-title">学习任务</div>
+            <select class="mini-select" id="taskFilter"></select>
+          </div>
+          <div class="task-list" id="taskList"></div>
+        </div>
+      </section>
+
+      <!-- 倒数日 -->
+      <section class="view" id="view-countdown">
+        <div class="block">
+          <div class="block-head">
+            <div class="block-title">倒数日</div>
+            <button class="mini-btn" id="addCountdownBtn">＋ 新增</button>
+          </div>
+          <div class="countdown-list" id="countdownList"></div>
+        </div>
+      </section>
+
+      <!-- 我的 -->
+      <section class="view" id="view-me">
+        <div class="block">
+          <div class="block-head">
+            <div class="block-title">学习科目</div>
+            <button class="mini-btn" id="addSubjectBtn">＋ 科目</button>
+          </div>
+          <div class="subject-manage" id="subjectManage"></div>
+        </div>
+        <div class="block">
+          <div class="block-head">
+            <div class="block-title">打卡历史</div>
+            <select class="mini-select" id="historyFilter"></select>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </div>
+        <div class="block">
+          <div class="block-title">积分流水</div>
+          <div class="flow-list" id="flowList"></div>
+        </div>
+        <div class="block">
+          <button class="danger-btn" id="resetBtn">清空所有数据</button>
+        </div>
+      </section>
+
+      <!-- 番茄钟（专注） -->
+      <section class="view" id="view-focus">
+        <div class="focus-wrap">
+          <div class="focus-modes">
+            <button class="mode-btn active" data-mode="focus">🍅 专注</button>
+            <button class="mode-btn" data-mode="short">☕ 短休</button>
+            <button class="mode-btn" data-mode="long">🌙 长休</button>
+          </div>
+          <div class="focus-ring">
+            <svg viewBox="0 0 220 220" aria-hidden="true">
+              <defs>
+                <linearGradient id="fgGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#6366f1"/>
+                  <stop offset="100%" stop-color="#22d3ee"/>
+                </linearGradient>
+              </defs>
+              <circle class="ring-bg" cx="110" cy="110" r="100"></circle>
+              <circle class="ring-fg" id="ringFg" cx="110" cy="110" r="100" stroke="url(#fgGrad)"></circle>
+            </svg>
+            <div class="focus-center">
+              <div class="focus-emoji" id="focusEmoji">🍅</div>
+              <div class="focus-time" id="focusTime">25:00</div>
+              <div class="focus-tip" id="focusTip">开始专注吧～</div>
+            </div>
+          </div>
+          <div class="focus-ctrl">
+            <button class="focus-btn ghost" id="focusReset" aria-label="重置">↺</button>
+            <button class="focus-btn primary" id="focusToggle">开始</button>
+          </div>
+          <div class="focus-stats">
+            <div class="fstat"><span class="fstat-emoji">🍅</span><b id="focusToday">0</b><small>今日</small></div>
+            <div class="fstat"><span class="fstat-emoji">🌟</span><b id="focusTotal">0</b><small>累计</small></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 悬浮按钮 -->
+    <button class="fab" id="fab" aria-label="快捷操作">＋</button>
+
+    <!-- 底部导航 -->
+    <nav class="bottom-nav" id="bottomNav">
+      <button class="nav-btn active" data-view="home"><span class="nav-ico">🏠</span><span>首页</span></button>
+      <button class="nav-btn" data-view="checkin"><span class="nav-ico">✅</span><span>打卡</span></button>
+      <button class="nav-btn" data-view="tasks"><span class="nav-ico">📝</span><span>任务</span></button>
+      <button class="nav-btn" data-view="countdown"><span class="nav-ico">⏳</span><span>倒数</span></button>
+      <button class="nav-btn" data-view="me"><span class="nav-ico">👤</span><span>我的</span></button>
+      <button class="nav-btn" data-view="focus"><span class="nav-ico">🍅</span><span>专注</span></button>
+    </nav>
+
+    <!-- 底部弹层 -->
+    <div class="sheet-mask" id="sheetMask">
+      <div class="sheet" id="sheet" role="dialog" aria-modal="true">
+        <div class="sheet-head">
+          <div class="sheet-title" id="sheetTitle">标题</div>
+          <button class="sheet-close" id="sheetClose" aria-label="关闭">✕</button>
+        </div>
+        <div class="sheet-body" id="sheetBody"></div>
+      </div>
+    </div>
+
+    <!-- 轻提示 -->
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
