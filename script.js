@@ -52,13 +52,24 @@
       countdowns: [],
       flows: [],
       focus: { date: '', todayCount: 0, total: 0 },
+      gifts: defaultGifts(),
     };
+  }
+  function defaultGifts() {
+    return [
+      { id: uid(), name: '奶茶', icon: '🧋', points: 100 },
+      { id: uid(), name: '电影票', icon: '🎬', points: 300 },
+      { id: uid(), name: '小零食', icon: '🍪', points: 150 },
+    ];
   }
 
   function load() {
     try {
       const s = JSON.parse(localStorage.getItem(KEY));
-      if (s && s.subjects) return s;
+      if (s && s.subjects) {
+        if (!Array.isArray(s.gifts)) s.gifts = defaultGifts();
+        return s;
+      }
     } catch (e) {}
     return defaultState();
   }
@@ -163,7 +174,7 @@
     const doneSet = new Set(todayCIs.map(c => c.subjectId));
     document.getElementById('homeSubjects').innerHTML = state.subjects.length
       ? state.subjects.map(s => subjChip(s, doneSet.has(s.id))).join('')
-      : '<div class="empty">还没有科目，去「我的」添加</div>';
+      : '<div class="empty">还没有科目，去「任务」添加</div>';
     // 近期任务（未完成前 4）
     const open = state.tasks.filter(t => !t.done).slice(0, 4);
     document.getElementById('homeTasks').innerHTML = open.length
@@ -209,7 +220,7 @@
     const doneSet = new Set(state.checkins.filter(c => c.date === today).map(c => c.subjectId));
     document.getElementById('checkinSubjects').innerHTML = state.subjects.length
       ? state.subjects.map(s => subjChip(s, doneSet.has(s.id))).join('')
-      : '<div class="empty">还没有科目，去「我的」添加</div>';
+      : '<div class="empty">还没有科目，去「任务」添加</div>';
     const todayCIs = state.checkins.filter(c => c.date === today).reverse();
     document.getElementById('todayCount').textContent = todayCIs.length + ' 次';
     document.getElementById('checkinToday').innerHTML = todayCIs.length
@@ -225,6 +236,7 @@
 
   /* ---------- 渲染：任务 ---------- */
   function renderTasks() {
+    renderSubjectManage();
     populateSubjectFilter('taskFilter');
     const f = document.getElementById('taskFilter').value;
     const list = state.tasks
@@ -233,6 +245,17 @@
     document.getElementById('taskList').innerHTML = list.length
       ? list.map(taskRow).join('')
       : '<div class="empty">暂无任务，点右下角 ＋ 添加</div>';
+  }
+  function renderSubjectManage() {
+    const el = document.getElementById('subjectManage');
+    if (!el) return;
+    el.innerHTML = state.subjects.length
+      ? state.subjects.map(s =>
+          '<div class="sm"><span class="sm-dot" style="background:' + s.color + '"></span>' +
+          '<span class="sm-name">' + s.icon + ' ' + escapeHtml(s.name) + '</span>' +
+          '<button class="sm-del" data-subj-del="' + s.id + '">删除</button></div>'
+        ).join('')
+      : '<div class="empty">还没有科目，点右上角 ＋ 科目</div>';
   }
 
   /* ---------- 渲染：倒数日 ---------- */
@@ -259,14 +282,8 @@
 
   /* ---------- 渲染：我的 ---------- */
   function renderMe() {
-    // 科目管理
-    document.getElementById('subjectManage').innerHTML = state.subjects.length
-      ? state.subjects.map(s =>
-          '<div class="sm"><span class="sm-dot" style="background:' + s.color + '"></span>' +
-          '<span class="sm-name">' + s.icon + ' ' + escapeHtml(s.name) + '</span>' +
-          '<button class="sm-del" data-subj-del="' + s.id + '">删除</button></div>'
-        ).join('')
-      : '<div class="empty">还没有科目</div>';
+    // 积分兑换
+    renderGifts();
     // 历史（可按科目筛选）
     populateSubjectFilter('historyFilter', true);
     const f = document.getElementById('historyFilter').value;
@@ -286,6 +303,22 @@
     document.getElementById('flowList').innerHTML = flows.length
       ? flows.map(flowRow).join('')
       : '<div class="empty">还没有积分记录</div>';
+  }
+  function renderGifts() {
+    const el = document.getElementById('giftList');
+    if (!el) return;
+    el.innerHTML = state.gifts.length
+      ? state.gifts.map(g => {
+          const afford = state.points >= g.points;
+          return '<div class="gift">' +
+            '<span class="gift-ico">' + g.icon + '</span>' +
+            '<div class="gift-main"><div class="gift-name">' + escapeHtml(g.name) + '</div>' +
+            '<div class="gift-pts">' + g.points + ' 分</div></div>' +
+            '<button class="gift-redeem' + (afford ? '' : ' disabled') + '" data-redeem="' + g.id + '">兑换</button>' +
+            '<button class="gift-edit" data-gift-edit="' + g.id + '" title="修改分值">✎</button>' +
+            '<button class="gift-del" data-gift-del="' + g.id + '" title="删除">✕</button></div>';
+        }).join('')
+      : '<div class="empty">还没有礼品，点右上角 ＋ 礼品 添加</div>';
   }
   function populateSubjectFilter(id, withAll) {
     const sel = document.getElementById(id);
@@ -349,7 +382,7 @@
     name = (name || '').trim(); if (!name) { toast('请输入科目名'); return; }
     state.subjects.push({ id: uid(), name, color: color || COLORS[0], icon: icon || '📘' });
     save(); toast('已添加科目'); closeSheet();
-    if (currentView === 'me') renderMe();
+    if (currentView === 'tasks') renderTasks();
     if (currentView === 'home') renderHome();
     if (currentView === 'checkin') renderCheckin();
   }
@@ -371,7 +404,7 @@
     const hasRel = state.checkins.some(c => c.subjectId === id) || state.tasks.some(t => t.subjectId === id);
     const doDelete = () => {
       state.subjects = state.subjects.filter(s => s.id !== id);
-      save(); renderMe();
+      save(); renderTasks();
       if (currentView === 'home') renderHome();
       if (currentView === 'checkin') renderCheckin();
     };
@@ -564,6 +597,45 @@
     });
     document.getElementById('f-submit').onclick = () => addCountdown(document.getElementById('f-title').value, document.getElementById('f-date').value, pick);
   }
+  function giftSheet(editId) {
+    const g = editId ? state.gifts.find(x => x.id === editId) : null;
+    openSheet(editId ? '编辑礼品' : '新增礼品',
+      '<div class="field"><label>礼品名称</label><input id="f-gname" placeholder="如：奶茶" maxlength="12" value="' + (g ? escapeHtml(g.name) : '') + '"></div>' +
+      '<div class="field"><label>图标（emoji）</label><input id="f-gicon" maxlength="2" value="' + (g ? g.icon : '🎁') + '"></div>' +
+      '<div class="field"><label>兑换所需积分</label><input id="f-gpts" type="number" min="1" value="' + (g ? g.points : 100) + '"></div>' +
+      '<button class="submit-btn" id="f-submit">保存</button>'
+    );
+    document.getElementById('f-submit').onclick = () => {
+      const name = (document.getElementById('f-gname').value || '').trim();
+      const icon = (document.getElementById('f-gicon').value || '').trim() || '🎁';
+      const pts = Math.max(1, parseInt(document.getElementById('f-gpts').value, 10) || 100);
+      if (!name) { toast('请输入礼品名'); return; }
+      if (g) { g.name = name; g.icon = icon; g.points = pts; }
+      else state.gifts.push({ id: uid(), name, icon, points: pts });
+      save(); toast('已保存'); closeSheet();
+      if (currentView === 'me') renderMe();
+    };
+  }
+  function deleteGift(id) {
+    const g = state.gifts.find(x => x.id === id); if (!g) return;
+    confirmDialog('删除礼品', '确定删除「' + g.name + '」？', () => {
+      state.gifts = state.gifts.filter(x => x.id !== id);
+      save(); if (currentView === 'me') renderMe();
+    });
+  }
+  function redeemGift(id) {
+    const g = state.gifts.find(x => x.id === id); if (!g) return;
+    if (state.points < g.points) {
+      confirmDialog('积分不足', '兑换「' + g.name + '」需要 ' + g.points + ' 分，你当前有 ' + state.points + ' 分，继续加油攒积分吧～', () => {});
+      return;
+    }
+    confirmDialog('确认兑换', '将消耗 ' + g.points + ' 分兑换「' + g.name + '」，确定？', () => {
+      state.points -= g.points;
+      state.flows.push({ id: uid(), type: 'spend', amount: g.points, reason: '兑换·' + g.name, refId: '', createdAt: Date.now() });
+      save(); renderPoints(); renderMe();
+      toast('兑换成功 🎉 消耗 ' + g.points + ' 分');
+    });
+  }
 
   /* ---------- 应用内确认弹层（替代原生 confirm） ---------- */
   function confirmDialog(title, msg, onOk) {
@@ -591,7 +663,7 @@
     document.getElementById('fab').onclick = () => {
       if (currentView === 'tasks') taskSheet();
       else if (currentView === 'countdown') countdownSheet();
-      else if (currentView === 'me') subjectSheet();
+      else if (currentView === 'me') giftSheet();
       else checkinSheet();
     };
     // 番茄钟
@@ -603,6 +675,7 @@
     mask.addEventListener('click', e => { if (e.target === mask) closeSheet(); });
     // 「我的」内按钮
     document.getElementById('addSubjectBtn').onclick = subjectSheet;
+    document.getElementById('addGiftBtn').onclick = () => giftSheet();
     document.getElementById('addCountdownBtn').onclick = countdownSheet;
     document.getElementById('resetBtn').onclick = resetAll;
 
@@ -618,17 +691,20 @@
     document.getElementById('view-checkin').addEventListener('click', e => {
       const c = e.target.closest('.subj-chip'); if (c) checkinSheet(c.dataset.subj);
     });
-    // 任务页
+    // 任务页：科目删除 + 任务点击
     document.getElementById('view-tasks').addEventListener('click', e => {
+      const del = e.target.closest('[data-subj-del]'); if (del) { deleteSubject(del.dataset.subjDel); return; }
       const t = e.target.closest('.task'); if (t) onTaskClick(t, e.target);
     });
     // 倒数日删除
     document.getElementById('view-countdown').addEventListener('click', e => {
       const d = e.target.closest('[data-cd]'); if (d) deleteCountdown(d.dataset.cd);
     });
-    // 我的：科目删除 + 任务点击
+    // 我的：礼品兑换 / 编辑 / 删除 + 任务点击
     document.getElementById('view-me').addEventListener('click', e => {
-      const del = e.target.closest('[data-subj-del]'); if (del) { deleteSubject(del.dataset.subjDel); return; }
+      const r = e.target.closest('[data-redeem]'); if (r) { redeemGift(r.dataset.redeem); return; }
+      const ed = e.target.closest('[data-gift-edit]'); if (ed) { giftSheet(ed.dataset.giftEdit); return; }
+      const dl = e.target.closest('[data-gift-del]'); if (dl) { deleteGift(dl.dataset.giftDel); return; }
       const t = e.target.closest('.task'); if (t) onTaskClick(t, e.target);
     });
   }

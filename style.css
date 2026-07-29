@@ -408,6 +408,32 @@ select{font-family:inherit;}
 .modal-btn.ghost{background:var(--bg);color:var(--text);}
 .modal-btn.danger{background:var(--c-red);color:#fff;box-shadow:0 6px 16px rgba(239,68,68,.35);}
 
+/* ===== 积分兑换（礼品） ===== */
+.gift-list{display:flex;flex-direction:column;gap:10px;}
+.gift{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg);border-radius:14px;padding:10px 12px;
+  border:1px solid var(--line);
+  animation:fadeUp .35s ease both;
+}
+.gift-ico{font-size:24px;width:30px;text-align:center;flex:0 0 auto;}
+.gift-main{flex:1;min-width:0;}
+.gift-name{font-size:15px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.gift-pts{font-size:12px;color:var(--c-primary);font-weight:700;margin-top:2px;}
+.gift-redeem{
+  flex:0 0 auto;border:none;background:linear-gradient(135deg,var(--c-primary),var(--c-cyan));
+  color:#fff;font-size:13px;font-weight:700;padding:7px 14px;border-radius:999px;
+  box-shadow:0 4px 12px rgba(99,102,241,.3);transition:.15s;
+}
+.gift-redeem:active{transform:scale(.94);}
+.gift-redeem.disabled{background:var(--line);color:var(--muted);box-shadow:none;cursor:not-allowed;}
+.gift-edit,.gift-del{
+  flex:0 0 auto;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);
+  background:var(--card);color:var(--muted);font-size:15px;transition:.15s;
+}
+.gift-edit:active,.gift-del:active{transform:scale(.92);}
+.gift-del{color:var(--c-red);}
+
 /* ===== 响应式断点 ===== */
 @media (min-width:768px){
   .app{max-width:560px;}
