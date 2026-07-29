@@ -1,0 +1,32 @@
+name: Daily Marquee Refresh
+
+on:
+  schedule:
+    # 每天 UTC 00:17 运行（北京时间 08:17），刷新走马灯线上内容
+    - cron: '17 0 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Generate marquee.json
+        run: node scripts/gen-marquee.mjs
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add marquee.json
+          if git diff --cached --quiet; then
+            echo "内容无变化，跳过提交"
+          else
+            git commit -m "chore: 每日走马灯内容刷新 $(date +%F)"
+            git push
+          fi

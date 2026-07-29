@@ -101,15 +101,41 @@
     clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('show'), 1800);
   }
 
-  /* ---------- 走马灯 ---------- */
+  /* ---------- 走马灯（在线内容 + 每日轮换） ---------- */
   let slides = [];
   let mIndex = 0;
   let mTimer = null;
 
-  function buildSlides() {
-    slides = [];
-    MARQUEE.forEach(group => group.items.forEach(it => slides.push({ subject: group.subject, type: it.type, text: it.text })));
+  const MARQUEE_URL = './marquee.json';   // 线上内容（部署到任意静态托管均可用相对路径）
+  const MARQUEE_PER_DAY = 8;              // 每天展示的条数
+
+  // 拉取线上内容；失败则回退到内置 MARQUEE
+  async function loadMarqueeItems() {
+    try {
+      const res = await fetch(MARQUEE_URL + '?t=' + todayStr(), { cache: 'no-cache' });
+      if (!res.ok) throw new Error('http ' + res.status);
+      const data = await res.json();
+      if (data && Array.isArray(data.pool) && data.pool.length) {
+        return data.pool.map(it => ({ subject: it.subject, type: it.type, text: it.text }));
+      }
+    } catch (e) {
+      console.warn('[marquee] 线上内容获取失败，使用内置回退：', e && e.message);
+    }
+    const items = [];
+    MARQUEE.forEach(g => g.items.forEach(it => items.push({ subject: g.subject, type: it.type, text: it.text })));
+    return items;
   }
+
+  // 按日期种子从内容池取一段，保证每天展示不同内容
+  function dailySlice(items, n) {
+    if (items.length <= n) return items.slice();
+    const dayNum = Math.floor(Date.now() / 86400000);
+    const start = dayNum % items.length;
+    const out = [];
+    for (let i = 0; i < n; i++) out.push(items[(start + i) % items.length]);
+    return out;
+  }
+
   function renderMarquee() {
     const track = document.getElementById('marqueeTrack');
     track.innerHTML = slides.map(s =>
@@ -126,8 +152,10 @@
     mIndex = (i + slides.length) % slides.length;
     renderMarquee();
   }
-  function startMarquee() {
-    buildSlides(); renderMarquee();
+  async function startMarquee() {
+    const items = await loadMarqueeItems();
+    slides = dailySlice(items, Math.min(MARQUEE_PER_DAY, items.length));
+    renderMarquee();
     clearInterval(mTimer);
     mTimer = setInterval(() => goMarquee(mIndex + 1), 4500);
   }
