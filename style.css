@@ -268,30 +268,30 @@ select{font-family:inherit;}
   width:calc(100% - 24px);max-width:480px;
   display:flex;align-items:center;gap:2px;
   padding:6px;
-  /* 液态玻璃：多层通透背景 + 渐变描边 + 强模糊 + 内高光 */
+  /* 液态玻璃（莫高设计特效思路）：去掉填充，靠模糊+描边高光+玻璃叠玻璃 */
   background:
-    linear-gradient(135deg, rgba(255,255,255,.74), rgba(255,255,255,.30)) padding-box,
-    linear-gradient(160deg, rgba(255,255,255,.85), rgba(255,255,255,.12)) border-box;
-  backdrop-filter:blur(28px) saturate(210%) brightness(1.08);
-  -webkit-backdrop-filter:blur(28px) saturate(210%) brightness(1.08);
+    linear-gradient(135deg, rgba(255,255,255,.42), rgba(255,255,255,.14)) padding-box,
+    linear-gradient(160deg, rgba(255,255,255,.92), rgba(255,255,255,.18)) border-box;
+  backdrop-filter:blur(30px) saturate(220%) brightness(1.1);
+  -webkit-backdrop-filter:blur(30px) saturate(220%) brightness(1.1);
   border:1.5px solid transparent;
-  border-radius:24px;
+  border-radius:26px;
   box-shadow:
-    0 8px 34px rgba(30,41,59,.18),
-    inset 0 1px 1px rgba(255,255,255,.9),
-    inset 0 -10px 22px rgba(255,255,255,.28);
+    0 8px 32px rgba(30,41,59,.15),
+    inset 0 1.5px 1.5px rgba(255,255,255,.95),
+    inset 0 -12px 24px rgba(255,255,255,.20);
   z-index:25;
 }
-.bottom-nav::before{ /* 玻璃顶高光 */
+.bottom-nav::before{ /* 透亮顶高光（玻璃上沿反光） */
   content:"";position:absolute;inset:0;border-radius:inherit;
-  background:linear-gradient(180deg,rgba(255,255,255,.55),transparent 45%);
+  background:linear-gradient(180deg,rgba(255,255,255,.6),transparent 42%);
   pointer-events:none;
 }
-.bottom-nav::after{ /* 液态流光：左上柔光斑 */
-  content:"";position:absolute;top:-2px;left:9%;width:46%;height:62%;
-  border-radius:inherit;pointer-events:none;
-  background:radial-gradient(60% 100% at 30% 0%, rgba(255,255,255,.55), transparent 70%);
-  filter:blur(7px);
+.bottom-nav::after{ /* 玻璃叠玻璃：内层更亮的折射高光 */
+  content:"";position:absolute;left:8%;right:8%;top:3px;height:44%;
+  border-radius:18px;pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.5),transparent 80%);
+  filter:blur(4px);
 }
 .nav-btn{
   flex:1;position:relative;z-index:1;
