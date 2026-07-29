@@ -277,6 +277,7 @@ select{font-family:inherit;}
   -webkit-backdrop-filter:blur(30px) saturate(220%) brightness(1.12);
   border:1.5px solid transparent;
   border-radius:26px;
+  overflow:hidden;            /* 让流光斑/反光被圆角裁切，强化液态包裹感 */
   box-shadow:
     0 8px 30px rgba(30,41,59,.10),
     inset 0 1px 1px rgba(255,255,255,.7);
@@ -292,6 +293,39 @@ select{font-family:inherit;}
   border-radius:18px;pointer-events:none;
   background:linear-gradient(180deg,rgba(255,255,255,.32),transparent 80%);
   filter:blur(4px);
+}
+/* 流光斑：两团柔光缓慢呼吸 + 漂移，让液态玻璃"活"起来 */
+.bottom-nav .nav-glow{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:0;overflow:hidden;}
+.bottom-nav .nav-glow::before,
+.bottom-nav .nav-glow::after{
+  content:"";position:absolute;border-radius:50%;filter:blur(16px);
+}
+.bottom-nav .nav-glow::before{
+  left:-12%;top:-55%;width:62%;height:130%;
+  background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.6),rgba(255,255,255,0) 70%);
+  animation:breathe 7s ease-in-out infinite;
+}
+.bottom-nav .nav-glow::after{
+  right:-14%;top:-45%;width:56%;height:120%;
+  background:radial-gradient(circle at 50% 50%,rgba(34,211,238,.42),rgba(34,211,238,0) 70%);
+  animation:breathe 9s ease-in-out -3.5s infinite;
+}
+@keyframes breathe{
+  0%,100%{transform:translate(0,0) scale(1);opacity:.5;}
+  50%{transform:translate(10px,5px) scale(1.16);opacity:.85;}
+}
+/* 反光：一条斜向高光带，随滚动角度（由 JS 写入 --sheen-y / --sheen-skew）缓动 */
+.bottom-nav .nav-sheen{
+  position:absolute;left:-40%;right:-40%;top:0;height:100%;
+  pointer-events:none;z-index:0;
+  background:linear-gradient(105deg,transparent 42%,rgba(255,255,255,.55) 50%,transparent 58%);
+  mix-blend-mode:screen;opacity:.45;
+  transform:translateY(calc(var(--sheen-y,0) * 1px)) skewX(calc(var(--sheen-skew,0) * 1deg));
+  transition:transform .25s ease-out;
+}
+@media (prefers-reduced-motion:reduce){
+  .bottom-nav .nav-glow::before,
+  .bottom-nav .nav-glow::after{animation:none;}
 }
 .nav-btn{
   flex:1;position:relative;z-index:1;

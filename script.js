@@ -742,9 +742,25 @@
     else completeTask(id);
   }
 
+  /* ---------- 底部栏反光：随滚动角度缓动 ---------- */
+  function bindSheen() {
+    const navEl = document.getElementById('bottomNav');
+    let raf = 0;
+    function update() {
+      raf = 0;
+      const y = window.scrollY || document.documentElement.scrollTop || 0;
+      // 用滚动位置驱动一条斜向反光的纵向位移与倾斜，模拟光线角度变化
+      navEl.style.setProperty('--sheen-y', (Math.cos(y / 90) * 5).toFixed(2));
+      navEl.style.setProperty('--sheen-skew', (Math.sin(y / 70) * 5).toFixed(2));
+    }
+    window.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(update); }, { passive: true });
+    update();
+  }
+
   /* ---------- 启动 ---------- */
   function init() {
     bind();
+    bindSheen();
     ringSetup();
     startMarquee();
     switchView('home');
