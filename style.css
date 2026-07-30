@@ -338,8 +338,8 @@ select{font-family:inherit;}
   width:calc(100% - 24px);max-width:480px;
   display:flex;align-items:center;gap:2px;
   padding:6px;
-  /* 10% 透明磨砂玻璃：靠模糊虚化出玻璃质感，不填实色、不加边 */
-  background:rgba(255,255,255,.1);
+  /* 0% 透明磨砂玻璃：背景全透，仅靠模糊虚化出玻璃质感，不加边 */
+  background:rgba(255,255,255,0);
   -webkit-backdrop-filter:blur(20px) saturate(180%);
   backdrop-filter:blur(20px) saturate(180%);
   border:none;
