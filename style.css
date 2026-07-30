@@ -338,10 +338,11 @@ select{font-family:inherit;}
   width:calc(100% - 24px);max-width:480px;
   display:flex;align-items:center;gap:2px;
   padding:6px;
-  background:rgba(255,255,255,.8);
+  /* 10% 透明磨砂玻璃：靠模糊虚化出玻璃质感，不填实色、不加边 */
+  background:rgba(255,255,255,.1);
   -webkit-backdrop-filter:blur(20px) saturate(180%);
   backdrop-filter:blur(20px) saturate(180%);
-  border:1px solid rgba(47,141,247,.22);
+  border:none;
   border-radius:999px;        /* 胶囊形态：两端半圆 */
   overflow:hidden;
   box-shadow:0 8px 24px rgba(31,56,92,.12);
