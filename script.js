@@ -8,6 +8,8 @@
   /* ---------- 常量 ---------- */
   const KEY = 'lingdong_daka_v1';
   const COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#6366f1'];
+  const SUBJECT_ICONS = ['#icon-book-open','#icon-calculator','#icon-globe','#icon-music','#icon-trophy','#icon-home','#icon-clock','#icon-star','#icon-gift','#icon-coffee','#icon-moon','#icon-check-circle'];
+  const GIFT_ICONS = ['#icon-gift','#icon-coffee','#icon-ticket','#icon-cookie','#icon-star','#icon-trophy','#icon-book-open','#icon-music','#icon-home','#icon-user','#icon-clock','#icon-moon'];
   const CHECKIN_BASE = 10;
   const TASK_POINTS = 20;
 
@@ -43,9 +45,9 @@
       streak: 0,
       lastCheckIn: '',
       subjects: [
-        { id: uid(), name: '语文', color: '#ef4444', icon: '📖' },
-        { id: uid(), name: '数学', color: '#3b82f6', icon: '🔢' },
-        { id: uid(), name: '英语', color: '#10b981', icon: '🔤' },
+        { id: uid(), name: '语文', color: '#ef4444', icon: '#icon-book-open' },
+        { id: uid(), name: '数学', color: '#3b82f6', icon: '#icon-calculator' },
+        { id: uid(), name: '英语', color: '#10b981', icon: '#icon-globe' },
       ],
       tasks: [],
       checkins: [],
@@ -57,9 +59,9 @@
   }
   function defaultGifts() {
     return [
-      { id: uid(), name: '奶茶', icon: '🧋', points: 100 },
-      { id: uid(), name: '电影票', icon: '🎬', points: 300 },
-      { id: uid(), name: '小零食', icon: '🍪', points: 150 },
+      { id: uid(), name: '奶茶', icon: '#icon-coffee', points: 100 },
+      { id: uid(), name: '电影票', icon: '#icon-ticket', points: 300 },
+      { id: uid(), name: '小零食', icon: '#icon-cookie', points: 150 },
     ];
   }
 
@@ -94,6 +96,43 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
       { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
     ));
+  }
+  /* SVG 图标辅助：支持 #icon-xxx 引用，并兼容旧版 emoji 数据 */
+  function iconOf(ref, cls, color) {
+    if (typeof ref === 'string' && ref.startsWith('#icon-')) {
+      return '<svg class="ico' + (cls ? ' ' + cls : '') + '"' + (color ? ' style="color:' + color + '"' : '') + ' aria-hidden="true"><use href="' + ref + '"/></svg>';
+    }
+    return '<span class="legacy-ico' + (cls ? ' ' + cls : '') + '">' + escapeHtml(ref || '') + '</span>';
+  }
+  function setIcon(el, ref) {
+    if (!el) return;
+    const svg = el.querySelector && el.querySelector('svg.ico');
+    if (svg && typeof ref === 'string' && ref.startsWith('#icon-')) {
+      let use = svg.querySelector('use');
+      if (!use) { svg.innerHTML = ''; use = document.createElementNS('http://www.w3.org/2000/svg', 'use'); svg.appendChild(use); }
+      use.setAttribute('href', ref);
+    } else {
+      el.textContent = ref || '';
+    }
+  }
+  function iconPickerHtml(icons, selected, id) {
+    return '<div class="icon-picker" id="' + id + '">' +
+      icons.map(ref => '<button type="button" class="ip-item' + (ref === selected ? ' sel' : '') + '" data-icon="' + ref + '">' + iconOf(ref) + '</button>').join('') +
+      '</div>';
+  }
+  function bindIconPicker(id, onPick, initial) {
+    let current = initial;
+    const wrap = document.getElementById(id);
+    if (!wrap) return { get: () => current };
+    wrap.querySelectorAll('.ip-item').forEach(btn => {
+      btn.onclick = () => {
+        wrap.querySelectorAll('.ip-item').forEach(x => x.classList.remove('sel'));
+        btn.classList.add('sel');
+        current = btn.dataset.icon;
+        if (onPick) onPick(current);
+      };
+    });
+    return { get: () => current };
   }
   function toast(msg) {
     const el = document.getElementById('toast');
@@ -177,7 +216,8 @@
     if (name === 'focus') fab.style.display = 'none';
     else {
       fab.style.display = '';
-      fab.textContent = (name === 'tasks' || name === 'countdown' || name === 'me') ? '＋' : '✓';
+      const ref = (name === 'tasks' || name === 'countdown' || name === 'me') ? '#icon-plus' : '#icon-check';
+      setIcon(fab, ref);
     }
   }
 
@@ -220,26 +260,26 @@
   function subjChip(s, done) {
     return '<div class="subj-chip' + (done ? ' done' : '') + '" data-subj="' + s.id + '">' +
       '<span class="bar" style="background:' + s.color + '"></span>' +
-      '<span class="ico">' + s.icon + '</span><span class="nm">' + escapeHtml(s.name) + '</span></div>';
+      iconOf(s.icon, 'subj-ico', s.color) + '<span class="nm">' + escapeHtml(s.name) + '</span></div>';
   }
   function taskRow(t) {
     const s = subjById(t.subjectId);
     return '<div class="task' + (t.done ? ' done' : '') + '" data-task="' + t.id + '">' +
-      '<div class="check" data-act="done">' + (t.done ? '✓' : '') + '</div>' +
+      '<div class="check" data-act="done">' + (t.done ? iconOf('#icon-check') : '') + '</div>' +
       '<div class="t-main"><div class="t-title">' + escapeHtml(t.title) + '</div>' +
-      '<div class="t-meta"><span class="tag-subj">' + (s ? s.icon + ' ' + escapeHtml(s.name) : '未分类') + '</span>' +
-      (t.dueDate ? '<span>📅 ' + t.dueDate + '</span>' : '') + '</div></div>' +
-      '<span class="pts">+' + t.points + '⭐</span>' +
-      '<button class="t-del" data-act="del">✕</button></div>';
+      '<div class="t-meta"><span class="tag-subj">' + (s ? iconOf(s.icon, 'task-subj-ico', s.color) + ' ' + escapeHtml(s.name) : '未分类') + '</span>' +
+      (t.dueDate ? '<span>' + iconOf('#icon-calendar', 'task-cal-ico') + ' ' + t.dueDate + '</span>' : '') + '</div></div>' +
+      '<span class="pts">+' + t.points + iconOf('#icon-star', 'pts-ico') + '</span>' +
+      '<button class="t-del" data-act="del">' + iconOf('#icon-x') + '</button></div>';
   }
   function flowRow(f) {
     const cls = f.type === 'earn' ? 'earn' : 'spend';
     const sign = f.type === 'earn' ? '+' : '−';
-    const ico = f.type === 'earn' ? '⬆' : '⬇';
-    return '<div class="fl ' + cls + '"><span class="fl-ico">' + ico + '</span>' +
+    const ico = f.type === 'earn' ? '#icon-arrow-up' : '#icon-arrow-down';
+    return '<div class="fl ' + cls + '">' + iconOf(ico, 'fl-ico') +
       '<div class="fl-main"><div>' + escapeHtml(f.reason) + '</div>' +
       '<div class="fl-date">' + new Date(f.createdAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) + '</div></div>' +
-      '<span class="fl-amt">' + sign + f.amount + '⭐</span></div>';
+      '<span class="fl-amt">' + sign + f.amount + iconOf('#icon-star', 'amt-star') + '</span></div>';
   }
 
   /* ---------- 渲染：打卡 ---------- */
@@ -254,7 +294,7 @@
     document.getElementById('checkinToday').innerHTML = todayCIs.length
       ? todayCIs.map(c => {
           const s = subjById(c.subjectId);
-          return '<div class="ci"><span class="ci-ico">' + (s ? s.icon : '✅') + '</span>' +
+          return '<div class="ci">' + iconOf(s ? s.icon : '#icon-check-circle', 'ci-ico', s ? s.color : '') +
             '<div class="ci-main"><div>' + (s ? escapeHtml(s.name) : '已删科目') + ' 打卡</div>' +
             '<div class="ci-sub">' + c.time + (c.note ? ' · ' + escapeHtml(c.note) : '') + '</div></div>' +
             '<span class="ci-pts">+' + c.points + '⭐</span></div>';
@@ -280,7 +320,7 @@
     el.innerHTML = state.subjects.length
       ? state.subjects.map(s =>
           '<div class="sm"><span class="sm-dot" style="background:' + s.color + '"></span>' +
-          '<span class="sm-name">' + s.icon + ' ' + escapeHtml(s.name) + '</span>' +
+          '<span class="sm-name">' + iconOf(s.icon, 'sm-ico', s.color) + ' ' + escapeHtml(s.name) + '</span>' +
           '<button class="sm-del" data-subj-del="' + s.id + '">删除</button></div>'
         ).join('')
       : '<div class="empty">还没有科目，点右上角 ＋ 科目</div>';
@@ -293,11 +333,11 @@
       ? list.map(c => {
           const d = daysUntil(c.targetDate);
           const txt = d > 0 ? '剩 ' + d + ' 天' : (d === 0 ? '就是今天！' : '已到期 ' + (-d) + ' 天');
-          return '<div class="cd' + (d < 0 ? ' over' : '') + '" style="background:linear-gradient(135deg,' + c.color + ',' + shade(c.color) + ')">' +
+            return '<div class="cd' + (d < 0 ? ' over' : '') + '" style="background:linear-gradient(135deg,' + c.color + ',' + shade(c.color) + ')">' +
             '<div class="cd-days">' + (d >= 0 ? d : 0) + '<small>天</small></div>' +
             '<div class="cd-info"><div class="cd-title">' + escapeHtml(c.title) + '</div>' +
-            '<div class="cd-date">' + c.targetDate + ' · ' + txt + '</div></div>' +
-            '<button class="cd-del" data-cd="' + c.id + '">✕</button></div>';
+            '<div class="cd-date">' + iconOf('#icon-calendar', 'cd-cal-ico') + ' ' + c.targetDate + ' · ' + txt + '</div></div>' +
+            '<button class="cd-del" data-cd="' + c.id + '">' + iconOf('#icon-x') + '</button></div>';
         }).join('')
       : '<div class="empty">还没有倒数日，点右上角 ＋ 新增</div>';
   }
@@ -320,9 +360,9 @@
       ? list.map(c => {
           const s = subjById(c.subjectId);
           const wk = ['日', '一', '二', '三', '四', '五', '六'][parseDate(c.date).getDay()];
-          return '<div class="hi"><span class="hi-ico">' + (s ? s.icon : '✅') + '</span>' +
+          return '<div class="hi">' + iconOf(s ? s.icon : '#icon-check-circle', 'hi-ico', s ? s.color : '') +
             '<div class="hi-main"><div>' + (s ? escapeHtml(s.name) : '已删科目') + ' 打卡' + (c.note ? ' · ' + escapeHtml(c.note) : '') + '</div>' +
-            '<div class="hi-sub">+' + c.points + '⭐</div></div>' +
+            '<div class="hi-sub">+' + c.points + iconOf('#icon-star', 'hi-sub-ico') + '</div></div>' +
             '<span class="hi-date">' + c.date + ' 周' + wk + ' ' + c.time + '</span></div>';
         }).join('')
       : '<div class="empty">还没有打卡记录</div>';
@@ -339,12 +379,12 @@
       ? state.gifts.map(g => {
           const afford = state.points >= g.points;
           return '<div class="gift">' +
-            '<span class="gift-ico">' + g.icon + '</span>' +
+            iconOf(g.icon, 'gift-ico') +
             '<div class="gift-main"><div class="gift-name">' + escapeHtml(g.name) + '</div>' +
             '<div class="gift-pts">' + g.points + ' 分</div></div>' +
             '<button class="gift-redeem' + (afford ? '' : ' disabled') + '" data-redeem="' + g.id + '">兑换</button>' +
-            '<button class="gift-edit" data-gift-edit="' + g.id + '" title="修改分值">✎</button>' +
-            '<button class="gift-del" data-gift-del="' + g.id + '" title="删除">✕</button></div>';
+            '<button class="gift-edit" data-gift-edit="' + g.id + '" title="修改分值">' + iconOf('#icon-pencil') + '</button>' +
+            '<button class="gift-del" data-gift-del="' + g.id + '" title="删除">' + iconOf('#icon-x') + '</button></div>';
         }).join('')
       : '<div class="empty">还没有礼品，点右上角 ＋ 礼品 添加</div>';
   }
@@ -376,7 +416,7 @@
     state.points += gain;
     state.lastCheckIn = today;
     save();
-    toast('打卡成功 +' + gain + '⭐' + (bonus ? ' 连击奖励!' : ''));
+    toast('打卡成功 +' + gain + ' 积分' + (bonus ? ' 连击奖励!' : ''));
     renderPoints();
     if (currentView === 'home') renderHome();
     if (currentView === 'checkin') renderCheckin();
@@ -408,7 +448,7 @@
   }
   function addSubject(name, color, icon) {
     name = (name || '').trim(); if (!name) { toast('请输入科目名'); return; }
-    state.subjects.push({ id: uid(), name, color: color || COLORS[0], icon: icon || '📘' });
+    state.subjects.push({ id: uid(), name, color: color || COLORS[0], icon: icon || SUBJECT_ICONS[0] });
     save(); toast('已添加科目'); closeSheet();
     if (currentView === 'tasks') renderTasks();
     if (currentView === 'home') renderHome();
@@ -454,9 +494,9 @@
   /* ---------- 番茄钟（专注） ---------- */
   const FOCUS_POINTS = 15;
   const MODES = {
-    focus: { sec: 25 * 60, emoji: '🍅', tip: '专注学习中…', tipStart: '开始专注吧～' },
-    short: { sec: 5 * 60, emoji: '☕', tip: '休息一下～', tipStart: '来杯短休息 ☕' },
-    long:  { sec: 15 * 60, emoji: '🌙', tip: '好好放松～', tipStart: '长休一下 🌙' },
+    focus: { sec: 25 * 60, icon: '#icon-clock', tip: '专注学习中…', tipStart: '开始专注吧～' },
+    short: { sec: 5 * 60, icon: '#icon-coffee', tip: '休息一下～', tipStart: '来杯短休息' },
+    long:  { sec: 15 * 60, icon: '#icon-moon', tip: '好好放松～', tipStart: '长休一下' },
   };
   let ft = { mode: 'focus', remain: MODES.focus.sec, running: false, iv: null };
 
@@ -469,7 +509,7 @@
     document.getElementById('focusToday').textContent = state.focus.todayCount;
     document.getElementById('focusTotal').textContent = state.focus.total;
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === ft.mode));
-    document.getElementById('focusEmoji').textContent = MODES[ft.mode].emoji;
+    setIcon(document.getElementById('focusEmoji'), MODES[ft.mode].icon);
     document.getElementById('focusTime').textContent = fmtFocus(ft.remain);
     document.getElementById('focusTip').textContent = ft.running ? MODES[ft.mode].tip : MODES[ft.mode].tipStart;
     document.getElementById('focusToggle').textContent = ft.running ? '暂停' : '开始';
@@ -528,7 +568,7 @@
       state.flows.push({ id: uid(), type: 'earn', amount: FOCUS_POINTS, reason: '番茄钟·完成一个专注', refId: '', createdAt: Date.now() });
       save(); renderPoints();
       confettiBurst();
-      toast('🍅 完成一个番茄 +' + FOCUS_POINTS + '⭐');
+      toast('完成一个番茄钟 +' + FOCUS_POINTS + ' 积分');
     } else {
       toast('休息结束，继续加油！');
     }
@@ -577,20 +617,22 @@
     };
   }
   function subjectSheet() {
+    const initialIcon = SUBJECT_ICONS[0];
     openSheet('新增科目',
       '<div class="field"><label>科目名称</label><input id="f-name" placeholder="如：物理" maxlength="8"></div>' +
-      '<div class="field"><label>图标（emoji）</label><input id="f-icon" value="📘" maxlength="2"></div>' +
+      '<div class="field"><label>图标</label>' + iconPickerHtml(SUBJECT_ICONS, initialIcon, 'f-icons') + '</div>' +
       '<div class="field"><label>颜色</label><div class="color-row" id="f-colors">' +
       COLORS.map((c, i) => '<span class="color-dot' + (i === 0 ? ' sel' : '') + '" data-c="' + c + '" style="background:' + c + '"></span>').join('') +
       '</div></div>' +
       '<button class="submit-btn" id="f-submit">添加</button>'
     );
     let pick = COLORS[0];
+    const iconPick = bindIconPicker('f-icons', null, initialIcon);
     sheetBody.querySelectorAll('.color-dot').forEach(d => d.onclick = () => {
       sheetBody.querySelectorAll('.color-dot').forEach(x => x.classList.remove('sel'));
       d.classList.add('sel'); pick = d.dataset.c;
     });
-    document.getElementById('f-submit').onclick = () => addSubject(document.getElementById('f-name').value, pick, document.getElementById('f-icon').value);
+    document.getElementById('f-submit').onclick = () => addSubject(document.getElementById('f-name').value, pick, iconPick.get());
   }
   function taskSheet() {
     if (!state.subjects.length) { toast('请先到「我的」添加科目'); return; }
@@ -627,17 +669,19 @@
   }
   function giftSheet(editId) {
     const g = editId ? state.gifts.find(x => x.id === editId) : null;
+    const initialIcon = (g && GIFT_ICONS.includes(g.icon)) ? g.icon : '#icon-gift';
     openSheet(editId ? '编辑礼品' : '新增礼品',
       '<div class="field"><label>礼品名称</label><input id="f-gname" placeholder="如：奶茶" maxlength="12" value="' + (g ? escapeHtml(g.name) : '') + '"></div>' +
-      '<div class="field"><label>图标（emoji）</label><input id="f-gicon" maxlength="2" value="' + (g ? g.icon : '🎁') + '"></div>' +
+      '<div class="field"><label>图标</label>' + iconPickerHtml(GIFT_ICONS, initialIcon, 'f-gicons') + '</div>' +
       '<div class="field"><label>兑换所需积分</label><input id="f-gpts" type="number" min="1" value="' + (g ? g.points : 100) + '"></div>' +
       '<button class="submit-btn" id="f-submit">保存</button>'
     );
+    const iconPick = bindIconPicker('f-gicons', null, initialIcon);
     document.getElementById('f-submit').onclick = () => {
       const name = (document.getElementById('f-gname').value || '').trim();
-      const icon = (document.getElementById('f-gicon').value || '').trim() || '🎁';
       const pts = Math.max(1, parseInt(document.getElementById('f-gpts').value, 10) || 100);
       if (!name) { toast('请输入礼品名'); return; }
+      const icon = iconPick.get();
       if (g) { g.name = name; g.icon = icon; g.points = pts; }
       else state.gifts.push({ id: uid(), name, icon, points: pts });
       save(); toast('已保存'); closeSheet();
@@ -661,7 +705,7 @@
       state.points -= g.points;
       state.flows.push({ id: uid(), type: 'spend', amount: g.points, reason: '兑换·' + g.name, refId: '', createdAt: Date.now() });
       save(); renderPoints(); renderMe();
-      toast('兑换成功 🎉 消耗 ' + g.points + ' 分');
+      toast('兑换成功，消耗 ' + g.points + ' 分');
     });
   }
 
