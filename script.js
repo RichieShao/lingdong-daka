@@ -7,7 +7,7 @@
 
   /* ---------- 常量 ---------- */
   const KEY = 'lingdong_daka_v1';
-  const COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6', '#6366f1'];
+  const COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#22d3ee', '#ec4899', '#14b8a6', '#2f8df7'];
   const SUBJECT_ICONS = ['#icon-book-open','#icon-calculator','#icon-globe','#icon-music','#icon-trophy','#icon-home','#icon-clock','#icon-star','#icon-gift','#icon-coffee','#icon-moon','#icon-check-circle'];
   const GIFT_ICONS = ['#icon-gift','#icon-coffee','#icon-ticket','#icon-cookie','#icon-star','#icon-trophy','#icon-book-open','#icon-music','#icon-home','#icon-user','#icon-clock','#icon-moon'];
   const CHECKIN_BASE = 10;
