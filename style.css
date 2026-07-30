@@ -291,11 +291,8 @@ select{font-family:inherit;}
   width:calc(100% - 24px);max-width:480px;
   display:flex;align-items:center;gap:2px;
   padding:6px;
-  /* 真通透液态玻璃：无白色填充、不铺白雾，
-     只靠 backdrop-filter 模糊虚化 + 发丝级描边 + 极淡流光撑出玻璃感 */
-  background:rgba(255,255,255,.02);
-  backdrop-filter:blur(22px) saturate(180%);
-  -webkit-backdrop-filter:blur(22px) saturate(180%);
+  /* 完全透明液态玻璃：移除模糊，靠发丝级描边 + 顶部高光 + 极淡流光撑出玻璃感 */
+  background:transparent;
   border:1px solid rgba(255,255,255,.4);
   border-radius:999px;        /* 胶囊形态：两端半圆 */
   overflow:hidden;            /* 让流光斑/反光被圆角裁切，强化液态包裹感 */
