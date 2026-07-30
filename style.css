@@ -322,14 +322,18 @@ select{font-family:inherit;}
   position:fixed;left:50%;transform:translateX(-50%);
   bottom:calc(var(--safe-b) + var(--nav-float) + var(--nav-h) + 12px);
   width:54px;height:54px;border-radius:50%;
-  background:linear-gradient(135deg,var(--c-primary),var(--c-primary-2));
-  color:#fff;font-size:26px;line-height:1;
-  box-shadow:0 10px 24px rgba(47,141,247,.5);
+  /* 0% 透明磨砂玻璃：背景全透，仅模糊虚化出玻璃质感 */
+  background:rgba(255,255,255,0);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  backdrop-filter:blur(20px) saturate(180%);
+  color:var(--c-primary);
+  border:none;font-size:26px;line-height:1;
+  box-shadow:0 8px 22px rgba(31,56,92,.14);
   z-index:30;display:grid;place-items:center;
   transition:transform .15s;
 }
 .fab:active{transform:translateX(-50%) scale(.92);}
-.fab-ico{width:26px;height:26px;}
+.fab-ico{width:26px;height:26px;color:var(--c-primary);}
 
 /* ===== 底部导航（浅色磨砂胶囊 · 激活蓝） ===== */
 .bottom-nav{
