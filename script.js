@@ -394,6 +394,25 @@
     sel.innerHTML = (withAll ? '<option value="">全部</option>' : '<option value="">全部科目</option>') +
       state.subjects.map(s => '<option value="' + s.id + '">' + escapeHtml(s.name) + '</option>').join('');
     if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+    fitSelect(id);
+  }
+  function fitSelect(id) {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt) return;
+    const cs = getComputedStyle(sel);
+    const span = document.createElement('span');
+    span.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;left:-9999px;top:-9999px;';
+    span.style.fontFamily = cs.fontFamily;
+    span.style.fontSize = cs.fontSize;
+    span.style.fontWeight = cs.fontWeight;
+    span.textContent = opt.textContent;
+    document.body.appendChild(span);
+    const w = span.getBoundingClientRect().width;
+    document.body.removeChild(span);
+    // 当前选项文字宽度 + 箭头区(~22px) + 右内边距(12px) + 余量
+    sel.style.width = (Math.ceil(w) + 34) + 'px';
   }
 
   /* ---------- 业务动作 ---------- */
