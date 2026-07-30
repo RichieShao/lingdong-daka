@@ -741,6 +741,43 @@
     mask.onclick = (e) => { if (e.target === mask) mask.classList.remove('show'); };
   }
 
+  /* ---------- 全局搜索 ---------- */
+  function showSearch() {
+    const sheet = document.getElementById('searchSheet');
+    sheet.classList.add('show');
+    const inp = document.getElementById('searchInput');
+    if (inp) inp.blur();
+  }
+  function hideSearch() { document.getElementById('searchSheet').classList.remove('show'); }
+  function runSearch() {
+    const kw = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+    const box = document.getElementById('searchResults');
+    if (!kw) {
+      box.innerHTML = '<div class="search-empty">输入关键词，搜索科目 / 任务 / 目标 / 兑换礼品</div>';
+      showSearch(); return;
+    }
+    const res = [];
+    state.subjects.forEach(s => { if (s.name.toLowerCase().includes(kw)) res.push({ type: '打卡科目', name: s.name, icon: s.icon, color: s.color, view: 'checkin' }); });
+    state.tasks.forEach(t => { if ((t.title || '').toLowerCase().includes(kw)) res.push({ type: '任务', name: t.title, icon: '#icon-kanban', view: 'tasks' }); });
+    state.countdowns.forEach(c => { if ((c.title || '').toLowerCase().includes(kw)) res.push({ type: '倒数目标', name: c.title, icon: '#icon-calendar', view: 'countdown' }); });
+    state.gifts.forEach(g => { if (g.name.toLowerCase().includes(kw)) res.push({ type: '积分兑换', name: g.name, icon: g.icon, view: 'me' }); });
+    if (!res.length) {
+      box.innerHTML = '<div class="search-empty">没有找到「' + escapeHtml(kw) + '」相关的内容</div>';
+      showSearch(); return;
+    }
+    box.innerHTML = res.map(r =>
+      '<div class="search-result" data-view="' + r.view + '">' +
+        iconOf(r.icon, 'sr-ico', r.color) +
+        '<div class="sr-main"><div class="sr-name">' + escapeHtml(r.name) + '</div><div class="sr-type">' + r.type + '</div></div>' +
+        '<span class="sr-arrow">›</span>' +
+      '</div>'
+    ).join('');
+    box.querySelectorAll('.search-result').forEach(el => {
+      el.onclick = () => { hideSearch(); switchView(el.dataset.view); };
+    });
+    showSearch();
+  }
+
   /* ---------- 事件绑定 ---------- */
   function bind() {
     // 底部导航
@@ -761,6 +798,12 @@
     document.querySelectorAll('.mode-btn').forEach(b => b.onclick = () => setMode(b.dataset.mode));
     document.getElementById('focusToggle').onclick = toggleFocus;
     document.getElementById('focusReset').onclick = resetFocus;
+    // 全局搜索
+    document.getElementById('searchGo').onclick = runSearch;
+    document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') runSearch(); });
+    document.getElementById('searchClose').onclick = hideSearch;
+    document.getElementById('searchSheet').addEventListener('click', e => { if (e.target === document.getElementById('searchSheet')) hideSearch(); });
+
     // 弹层关闭
     document.getElementById('sheetClose').onclick = closeSheet;
     mask.addEventListener('click', e => { if (e.target === mask) closeSheet(); });

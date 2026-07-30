@@ -45,8 +45,8 @@
     <header class="app-header">
       <div class="search-bar">
         <svg class="ico search-ico" aria-hidden="true"><use href="#icon-search"/></svg>
-        <input class="search-input" placeholder="搜索科目、任务、目标…" />
-        <button class="search-go">搜索</button>
+        <input class="search-input" id="searchInput" placeholder="搜索科目、任务、目标…" />
+        <button class="search-go" id="searchGo">搜索</button>
       </div>
       <div class="header-row">
         <div class="header-greet">
@@ -242,6 +242,17 @@
           <button class="modal-btn ghost" id="confirmCancel">取消</button>
           <button class="modal-btn danger" id="confirmOk">确定</button>
         </div>
+      </div>
+    </div>
+
+    <!-- 搜索结果浮层 -->
+    <div class="modal-mask search-sheet" id="searchSheet">
+      <div class="search-panel" role="dialog" aria-modal="true">
+        <div class="search-panel-head">
+          <span>搜索结果</span>
+          <button class="search-close" id="searchClose" aria-label="关闭">✕</button>
+        </div>
+        <div class="search-results" id="searchResults"></div>
       </div>
     </div>
 
