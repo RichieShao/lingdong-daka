@@ -411,8 +411,8 @@
     document.body.appendChild(span);
     const w = span.getBoundingClientRect().width;
     document.body.removeChild(span);
-    // 当前选项文字宽度 + 箭头区(~22px) + 右内边距(12px) + 余量
-    sel.style.width = (Math.ceil(w) + 34) + 'px';
+    // 宽度需包含左右内边距(12+36)并给文字留膨胀余量，避免 box-sizing:border-box 下文字被箭头盖住
+    sel.style.width = (Math.ceil(w) + 64) + 'px';
   }
 
   /* ---------- 业务动作 ---------- */

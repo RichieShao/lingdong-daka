@@ -121,11 +121,11 @@ select{font-family:inherit;}
 .mini-select{
   font-size:13px;color:var(--text);
   border:1px solid var(--line);border-radius:999px;
-  padding:6px 30px 6px 12px;
-  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 20a1.2 1.2 0 0 1-.8-.4l-7-7a1.2 1.2 0 0 1 1.7-1.7L11 15.6V4a1.2 1.2 0 0 1 2.4 0v11.6l6.1-5.7a1.2 1.2 0 0 1 1.7 1.7l-7 7A1.2 1.2 0 0 1 12 20Z'/%3E%3C/svg%3E") no-repeat right 10px center;
+  padding:6px 36px 6px 12px;
+  background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236b7280'%3E%3Cpath d='M12 20a1.2 1.2 0 0 1-.8-.4l-7-7a1.2 1.2 0 0 1 1.7-1.7L11 15.6V4a1.2 1.2 0 0 1 2.4 0v11.6l6.1-5.7a1.2 1.2 0 0 1 1.7 1.7l-7 7A1.2 1.2 0 0 1 12 20Z'/%3E%3C/svg%3E") no-repeat right 12px center;
   background-size:15px 15px;
   -webkit-appearance:none;appearance:none;
-  max-width:220px;
+  max-width:240px;
   transition:width .15s ease;
 }
 
