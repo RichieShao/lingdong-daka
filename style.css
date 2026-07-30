@@ -416,7 +416,7 @@ select{font-family:inherit;}
 .mode-btn.active{color:#fff;background:linear-gradient(135deg,var(--c-primary),var(--c-primary-2));box-shadow:0 6px 16px rgba(47,141,247,.35);}
 .mode-btn.active .ico{color:#fff;}
 .focus-ring{position:relative;width:240px;height:240px;margin:0 auto 22px;}
-.focus-ring svg{width:100%;height:100%;transform:rotate(-90deg);}
+.focus-ring > svg{width:100%;height:100%;transform:rotate(-90deg);}
 .ring-bg{fill:none;stroke:rgba(47,141,247,.12);stroke-width:14;}
 .ring-fg{fill:none;stroke-width:14;stroke-linecap:round;transition:stroke-dashoffset .35s linear;}
 .focus-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;pointer-events:none;}
