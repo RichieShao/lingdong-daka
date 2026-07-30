@@ -297,7 +297,7 @@ select{font-family:inherit;}
   backdrop-filter:blur(22px) saturate(180%);
   -webkit-backdrop-filter:blur(22px) saturate(180%);
   border:1px solid rgba(255,255,255,.4);
-  border-radius:26px;
+  border-radius:999px;        /* 胶囊形态：两端半圆 */
   overflow:hidden;            /* 让流光斑/反光被圆角裁切，强化液态包裹感 */
   box-shadow:0 8px 30px rgba(30,41,59,.12);
   z-index:25;
