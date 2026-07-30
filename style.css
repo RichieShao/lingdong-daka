@@ -142,21 +142,21 @@ select{font-family:inherit;}
   background:linear-gradient(135deg,rgba(255,255,255,.18),transparent 40%);
   pointer-events:none;
 }
-.marquee-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;position:relative;z-index:1;}
+.marquee-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;position:relative;z-index:1;}
 .marquee-subject{font-weight:800;font-size:16px;}
 .marquee-tag{
   font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;
   background:rgba(255,255,255,.25);
 }
-.marquee-viewport{position:relative;z-index:1;height:78px;overflow:hidden;}
+.marquee-viewport{position:relative;z-index:1;height:54px;overflow:hidden;}
 .marquee-track{display:flex;transition:transform .45s cubic-bezier(.4,0,.2,1);}
 .marquee-slide{
   min-width:100%;
   display:flex;align-items:center;
-  font-size:15px;line-height:1.55;font-weight:500;
+  font-size:14px;line-height:1.5;font-weight:500;
   padding-right:8px;
 }
-.marquee-ctrl{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:12px;position:relative;z-index:1;}
+.marquee-ctrl{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:8px;position:relative;z-index:1;}
 .marq-btn{
   width:28px;height:28px;border-radius:50%;
   background:rgba(255,255,255,.22);color:#fff;font-size:16px;line-height:1;
