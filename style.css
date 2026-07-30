@@ -7,7 +7,7 @@
   --c-red:#ef4444;
   --c-green:#10b981;
   --c-blue:#3b82f6;
-  --c-nav-active:#ff4d4f;
+  --c-nav-active:#7c5cff;       /* 导航激活色：紫色（与全局主色一致） */
 
   --bg:#f4f6fb;
   --card:#ffffff;
@@ -285,19 +285,21 @@ select{font-family:inherit;}
 .fab:active{transform:translateX(-50%) scale(.92);}
 .fab-ico{width:26px;height:26px;}
 
-/* ===== 底部导航（深色胶囊 · 填充图标） ===== */
+/* ===== 底部导航（无色 20% 磨砂玻璃胶囊 · 填充图标 · 仅图标变色） ===== */
 .bottom-nav{
   position:fixed;left:50%;transform:translateX(-50%);
   bottom:calc(var(--safe-b) + var(--nav-float));
   width:calc(100% - 24px);max-width:480px;
   display:flex;align-items:center;gap:2px;
   padding:6px;
-  /* 深色胶囊：参考 HarmonyOS 底栏，暗底 + 红色激活 + 填充图标 */
-  background:rgba(0,0,0,.82);
-  border:1px solid rgba(255,255,255,.12);
+  /* 无色 20% 磨砂玻璃：不填黑，仅 20% 白磨砂 + 模糊虚化，靠细边勾勒玻璃感 */
+  background:rgba(255,255,255,.2);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);
+  backdrop-filter:blur(18px) saturate(180%);
+  border:1px solid rgba(255,255,255,.55);
   border-radius:999px;        /* 胶囊形态：两端半圆 */
   overflow:hidden;
-  box-shadow:0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12);
+  box-shadow:0 8px 24px rgba(30,41,59,.12), inset 0 1px 0 rgba(255,255,255,.6);
   z-index:25;
 }
 .bottom-nav::before{ /* 顶部极淡高光，勾勒玻璃边缘 */
@@ -308,11 +310,11 @@ select{font-family:inherit;}
 .nav-btn{
   flex:1;position:relative;z-index:1;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
-  font-size:11px;color:rgba(255,255,255,.55);transition:.18s;
+  font-size:11px;color:var(--muted);transition:.18s;
   border-radius:15px;padding:6px 0;
 }
-.nav-btn .nav-ico{width:22px;height:22px;color:rgba(255,255,255,.55);transition:.18s;}
-.nav-btn.active{color:var(--c-nav-active);font-weight:700;background:rgba(255,77,79,.14);}
+.nav-btn .nav-ico{width:22px;height:22px;color:var(--muted);transition:.18s;}
+.nav-btn.active{color:var(--muted);font-weight:700;background:none;}   /* 选中不要框，只在图标里变色 */
 .nav-btn.active .nav-ico{color:var(--c-nav-active);transform:translateY(-1px);}
 
 /* ===== 底部弹层 ===== */
