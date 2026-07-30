@@ -120,7 +120,11 @@ select{font-family:inherit;}
 .search-result .sr-ico{width:22px;height:22px;color:var(--c-primary);flex:0 0 auto;}
 .search-result .sr-main{flex:1;min-width:0;}
 .search-result .sr-name{font-weight:600;font-size:14px;color:var(--text);}
-.search-result .sr-type{font-size:12px;color:var(--muted);margin-top:1px;}
+.search-result .sr-sub{display:flex;align-items:center;gap:8px;margin-top:2px;flex-wrap:wrap;}
+.search-result .sr-type{font-size:12px;color:var(--muted);}
+.search-result .sr-status{font-size:12px;font-weight:600;color:var(--muted);}
+.search-result .sr-status.ok{color:var(--c-green);}
+.search-result .sr-status.warn{color:var(--c-red);}
 .search-result .sr-arrow{color:var(--muted);font-size:20px;line-height:1;flex:0 0 auto;}
 .search-empty{padding:30px 16px;text-align:center;color:var(--muted);font-size:13px;line-height:1.6;}
 /* 顶部问候区 */
