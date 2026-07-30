@@ -514,7 +514,7 @@
   const FOCUS_POINTS = 15;
   const MODES = {
     focus: { sec: 25 * 60, icon: '#icon-clock', tip: '专注学习中…', tipStart: '开始专注吧～' },
-    short: { sec: 5 * 60, icon: '#icon-coffee', tip: '休息一下～', tipStart: '来杯短休息' },
+    short: { sec: 5 * 60, icon: '#icon-coffee', tip: '休息一下～', tipStart: '来杯咖啡' },
     long:  { sec: 15 * 60, icon: '#icon-moon', tip: '好好放松～', tipStart: '长休一下' },
   };
   let ft = { mode: 'focus', remain: MODES.focus.sec, running: false, iv: null };
