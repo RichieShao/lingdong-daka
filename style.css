@@ -518,7 +518,7 @@ select{font-family:inherit;}
   border-radius:15px;padding:6px 0;
 }
 .nav-btn .nav-ico{width:22px;height:22px;color:var(--muted);transition:.18s;}
-.nav-btn.active{color:var(--c-nav-active);font-weight:700;background:rgba(47,141,247,.12);}   /* 选中：柔和蓝色胶囊底 */
+.nav-btn.active{color:var(--c-nav-active);font-weight:700;}   /* 选中：仅图标/文字变色，无选中框 */
 .nav-btn.active .nav-ico{color:var(--c-nav-active);transform:translateY(-1px);}
 
 /* ===== 底部弹层 ===== */
