@@ -52,11 +52,13 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
   let state = load();
   if (!state.focus) state.focus = { date: '', todayCount: 0, total: 0 };
   if (!state.userName) state.userName = '同学';
+  if (!state.avatar) state.avatar = '';
 
   function defaultState() {
     return {
       points: 0,
       userName: '同学',
+      avatar: '',
       streak: 0,
       lastCheckIn: '',
       subjects: [
@@ -74,6 +76,7 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
       countdowns: [],
       flows: [],
       focus: { date: '', todayCount: 0, total: 0 },
+      syncAt: 0,
       gifts: defaultGifts(),
     };
   }
@@ -95,8 +98,12 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
     } catch (e) {}
     return defaultState();
   }
-  function save() {
+  function saveLocal() {
     localStorage.setItem(KEY, JSON.stringify(state));
+  }
+  function save() {
+    saveLocal();
+    scheduleCloudPush();
   }
 
   /* ---------- 工具 ---------- */
@@ -116,6 +123,29 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
       { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
     ));
+  }
+  /* 图片压缩：相册图片 → 缩放到 maxDim → 输出 JPEG dataURL，控制 localStorage 体积 */
+  function resizeImage(file, maxDim, cb) {
+    if (!file || !file.type || file.type.indexOf('image/') !== 0) { toast('请选择图片文件'); return; }
+    const reader = new FileReader();
+    reader.onerror = () => toast('读取图片失败');
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => toast('图片解析失败');
+      img.onload = () => {
+        const w = img.width, h = img.height;
+        const scale = Math.min(1, maxDim / Math.max(w, h));
+        const cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = cw; canvas.height = ch;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, cw, ch);
+        try { cb(canvas.toDataURL('image/jpeg', 0.82)); }
+        catch (e) { toast('图片处理失败'); }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
   }
   /* SVG 图标辅助：支持 #icon-xxx 引用，并兼容旧版 emoji 数据 */
   function iconOf(ref, cls, color) {
@@ -156,14 +186,14 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
   }
   function toast(msg) {
     const el = document.getElementById('toast');
-    el.textContent = msg; el.classList.add('show');
+    el.textContent = msg;
+    el.classList.remove('show'); void el.offsetWidth; // 强制回流，重启弹跳动画
+    el.classList.add('show');
     clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('show'), 1800);
   }
 
-  /* ---------- 走马灯（在线内容 + 每日轮换） ---------- */
+  /* ---------- 走马灯（顶部矮条 · 横向无缝滚动） ---------- */
   let slides = [];
-  let mIndex = 0;
-  let mTimer = null;
 
   const MARQUEE_URL = './marquee.json';   // 线上内容（部署到任意静态托管均可用相对路径）
   const MARQUEE_PER_DAY = 8;              // 每天展示的条数
@@ -195,28 +225,20 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
     return out;
   }
 
+  // 顶部矮条：把当日内容拼成一条，重复两份做无缝横向滚动（真正的「走马灯」）
   function renderMarquee() {
     const track = document.getElementById('marqueeTrack');
-    track.innerHTML = slides.map(s =>
-      '<div class="marquee-slide">' + escapeHtml(s.text) + '</div>'
-    ).join('');
-    const dots = document.getElementById('marqueeDots');
-    dots.innerHTML = slides.map((_, i) => '<span class="dot' + (i === mIndex ? ' active' : '') + '"></span>').join('');
-    const cur = slides[mIndex];
-    document.getElementById('marqueeSubject').textContent = cur.subject;
-    document.getElementById('marqueeType').textContent = cur.type;
-    track.style.transform = 'translateX(' + (-mIndex * 100) + '%)';
+    const one = slides.map(s => '【' + s.subject + '·' + s.type + '】' + s.text).join('　　◆　　');
+    const safe = escapeHtml(one);
+    track.innerHTML = '<span class="marq-line">' + safe + '</span>'
+                    + '<span class="marq-line" aria-hidden="true">' + safe + '</span>';
   }
-  function goMarquee(i) {
-    mIndex = (i + slides.length) % slides.length;
-    renderMarquee();
-  }
+
   async function startMarquee() {
     const items = await loadMarqueeItems();
     slides = dailySlice(items, Math.min(MARQUEE_PER_DAY, items.length));
     renderMarquee();
-    clearInterval(mTimer);
-    mTimer = setInterval(() => goMarquee(mIndex + 1), 4500);
+    // 横向滚动由 CSS 动画负责，无需定时器
   }
 
   /* ---------- 视图切换 ---------- */
@@ -242,7 +264,21 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
   }
 
   /* ---------- 渲染：积分 / 首页 ---------- */
-  function renderPoints() { document.getElementById('pointsBalance').textContent = state.points; }
+  function renderPoints() {
+    const el = document.getElementById('pointsBalance');
+    const pill = document.getElementById('pointsPill');
+    const next = state.points;
+    const first = el.dataset.val === undefined;
+    const prev = parseInt(el.dataset.val || '0', 10);
+    el.textContent = next;
+    el.dataset.val = next;
+    if (first || next === prev) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const cls = next > prev ? 'pts-pop' : 'pts-pop-down';
+    pill.classList.remove('pts-pop', 'pts-pop-down');
+    void pill.offsetWidth; // 强制回流，重启动画
+    pill.classList.add(cls);
+  }
 
   function renderHome() {
     renderPoints();
@@ -265,7 +301,7 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
     // 今日待打卡（全部科目，已打卡标记）
     const doneSet = new Set(todayCIs.map(c => c.subjectId));
     document.getElementById('homeSubjects').innerHTML = state.subjects.length
-      ? state.subjects.map(s => subjChip(s, doneSet.has(s.id))).join('')
+      ? state.subjects.map((s,i) => subjChip(s, doneSet.has(s.id), i)).join('')
       : '<div class="empty">还没有科目，去「任务」添加</div>';
     // 近期任务（未完成前 4）
     const open = state.tasks.filter(t => !t.done).slice(0, 4);
@@ -281,10 +317,10 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
   function stat(num, unit, gold, lab) {
     return '<div class="stat"><div class="num' + (gold ? ' gold' : '') + '">' + num + (unit ? '<small style="font-size:12px"> ' + unit + '</small>' : '') + '</div><div class="lab">' + lab + '</div></div>';
   }
-  function subjChip(s, done) {
-    return '<div class="subj-chip' + (done ? ' done' : '') + '" data-subj="' + s.id + '">' +
+  function subjChip(s, done, i) {
+    return '<div class="subj-chip' + (done ? ' done' : '') + '" data-subj="' + s.id + '" style="--i:' + (i||0) + ';--c:' + s.color + '">' +
       '<span class="bar" style="background:' + s.color + '"></span>' +
-      iconOf(s.icon, 'subj-ico', s.color) + '<span class="nm">' + escapeHtml(s.name) + '</span></div>';
+      iconOf(s.icon, 'subj-ico') + '<span class="nm">' + escapeHtml(s.name) + '</span></div>';
   }
   function taskRow(t) {
     const s = subjById(t.subjectId);
@@ -308,12 +344,10 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
 
   /* ---------- 渲染：打卡 ---------- */
   function renderCheckin() {
-    renderProfile();
-    renderAchievements();
     const today = todayStr();
     const doneSet = new Set(state.checkins.filter(c => c.date === today).map(c => c.subjectId));
     document.getElementById('checkinSubjects').innerHTML = state.subjects.length
-      ? state.subjects.map(s => subjChip(s, doneSet.has(s.id))).join('')
+      ? state.subjects.map((s,i) => subjChip(s, doneSet.has(s.id), i)).join('')
       : '<div class="empty">还没有科目，去「任务」添加</div>';
     const todayCIs = state.checkins.filter(c => c.date === today).reverse();
     document.getElementById('todayCount').textContent = todayCIs.length + ' 次';
@@ -333,6 +367,16 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
     const nm = document.getElementById('cpName'); if (nm) nm.textContent = state.userName || '同学';
     const sub = document.getElementById('cpSub'); if (sub) sub.textContent = '今日已打卡 ' + done + ' / ' + state.subjects.length;
     const st = document.getElementById('cpStreak'); if (st) st.textContent = state.streak;
+    renderAvatar();
+  }
+  function renderAvatar() {
+    const av = document.getElementById('cpAvatar'); if (!av) return;
+    if (state.avatar) {
+      av.innerHTML = '<img src="' + state.avatar + '" alt="头像">';
+    } else {
+      av.innerHTML = '<span class="cp-avatar-edit" aria-hidden="true">' + iconOf('#icon-camera', '') + '</span>';
+    }
+    av.onclick = () => { const inp = document.getElementById('avatarInput'); if (inp) inp.click(); };
   }
   function renderAchievements() {
     const total = state.checkins.length;
@@ -415,6 +459,8 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
 
   /* ---------- 渲染：我的 ---------- */
   function renderMe() {
+    renderProfile();
+    renderAchievements();
     // 积分兑换
     renderGifts();
     // 历史（可按科目筛选）
@@ -588,10 +634,30 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
   function focusResetState() {
     if (!state.focus) state.focus = { date: '', todayCount: 0, total: 0 };
   }
+  function setCount(el, val) {
+    val = Number(val) || 0;
+    const prev = Number(el.dataset.cv || 0);
+    el.dataset.cv = val;
+    if (prev === val) { el.textContent = val; return; }
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = val; return; }
+    countUp(el, prev, val, 700);
+  }
+  function countUp(el, from, to, dur) {
+    if (el._raf) cancelAnimationFrame(el._raf);
+    const t0 = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - p, 3); // easeOutCubic
+      el.textContent = Math.round(from + (to - from) * e);
+      if (p < 1) el._raf = requestAnimationFrame(step);
+      else el.textContent = to;
+    };
+    el._raf = requestAnimationFrame(step);
+  }
   function renderFocus() {
     focusResetState();
-    document.getElementById('focusToday').textContent = state.focus.todayCount;
-    document.getElementById('focusTotal').textContent = state.focus.total;
+    setCount(document.getElementById('focusToday'), state.focus.todayCount);
+    setCount(document.getElementById('focusTotal'), state.focus.total);
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === ft.mode));
     setIcon(document.getElementById('focusEmoji'), MODES[ft.mode].icon);
     document.getElementById('focusTime').textContent = fmtFocus(ft.remain);
@@ -881,9 +947,6 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
     document.getElementById('bottomNav').addEventListener('click', e => {
       const b = e.target.closest('.nav-btn'); if (b) switchView(b.dataset.view);
     });
-    // 走马灯
-    document.getElementById('marqPrev').onclick = () => goMarquee(mIndex - 1);
-    document.getElementById('marqNext').onclick = () => goMarquee(mIndex + 1);
     // FAB
     document.getElementById('fab').onclick = () => {
       if (currentView === 'tasks') taskSheet();
@@ -909,10 +972,25 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
     document.getElementById('addGiftBtn').onclick = () => giftSheet();
     document.getElementById('addCountdownBtn').onclick = countdownSheet;
     document.getElementById('resetBtn').onclick = resetAll;
+    const avInp = document.getElementById('avatarInput');
+    if (avInp) avInp.addEventListener('change', e => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      resizeImage(f, 256, url => { state.avatar = url; save(); renderAvatar(); toast('头像已更新'); });
+      e.target.value = '';
+    });
 
     // 科目筛选（任务）
     document.getElementById('taskFilter').onchange = renderTasks;
     document.getElementById('historyFilter').onchange = renderMe;
+    // 云端同步
+    const syncNow = document.getElementById('syncNow');
+    if (syncNow) syncNow.onclick = () => {
+      if (!cloudEnabled) { toast(cloudStatus === 'noenv' ? '未配置云端环境' : '云端尚未就绪，请稍候'); return; }
+      cloudPull();
+    };
+    const syncAuto = document.getElementById('syncAuto');
+    if (syncAuto) syncAuto.onchange = (e) => { cloudAuto = e.target.checked; if (cloudAuto) cloudPull(); };
 
     // 首页 / 打卡页：科目芯片点击 → 打卡
     document.getElementById('view-home').addEventListener('click', e => {
@@ -920,7 +998,6 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
       const t = e.target.closest('.task'); if (t) onTaskClick(t, e.target);
     });
     document.getElementById('view-checkin').addEventListener('click', e => {
-      const ed = e.target.closest('#cpEdit'); if (ed) { editName(); return; }
       const c = e.target.closest('.subj-chip'); if (c) checkinSheet(c.dataset.subj);
     });
     // 任务页：科目删除 + 任务点击
@@ -934,6 +1011,7 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
     });
     // 我的：礼品兑换 / 编辑 / 删除 + 任务点击
     document.getElementById('view-me').addEventListener('click', e => {
+      const cp = e.target.closest('#cpEdit'); if (cp) { editName(); return; }
       const r = e.target.closest('[data-redeem]'); if (r) { redeemGift(r.dataset.redeem); return; }
       const ed = e.target.closest('[data-gift-edit]'); if (ed) { giftSheet(ed.dataset.giftEdit); return; }
       const dl = e.target.closest('[data-gift-del]'); if (dl) { deleteGift(dl.dataset.giftDel); return; }
@@ -961,12 +1039,131 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
     update();
   }
 
+  /* ---------- 磁吸微动（仅桌面 hover 设备） ---------- */
+  function setupMagnetic() {
+    if (!window.matchMedia || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+    const MAX = 10; // 最大偏移 px，克制不夸张
+    [].slice.call(document.querySelectorAll('.magnetic')).forEach(el => {
+      let tx = 0, ty = 0, raf = 0;
+      function apply() {
+        raf = 0;
+        el.style.setProperty('--mx', tx.toFixed(1) + 'px');
+        el.style.setProperty('--my', ty.toFixed(1) + 'px');
+      }
+      el.addEventListener('mousemove', e => {
+        const r = el.getBoundingClientRect();
+        let dx = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
+        let dy = (e.clientY - (r.top + r.height / 2)) / (r.height / 2);
+        dx = Math.max(-1, Math.min(1, dx));
+        dy = Math.max(-1, Math.min(1, dy));
+        tx = dx * MAX; ty = dy * MAX;
+        if (!raf) raf = requestAnimationFrame(apply);
+      });
+      el.addEventListener('mouseleave', () => {
+        tx = 0; ty = 0;
+        if (!raf) raf = requestAnimationFrame(apply);
+      });
+    });
+  }
+
+  /* ---------- 云端同步（微信云开发 CloudBase Web SDK） ---------- */
+  let cloudApp = null, cloudUid = null, cloudEnabled = false;
+  let cloudStatus = 'idle', cloudLast = 0, cloudAuto = true, cloudFallback = false;
+  const CLOUD_ENV = '';        // ← 填云开发环境 ID
+  const CLOUD_MP_APPID = '';   // ← 填公众号 AppID（H5 在微信内网页授权获取 unionid 用）
+  let cloudPushTimer = null;
+
+  async function initCloud() {
+    if (!CLOUD_ENV) { cloudStatus = 'noenv'; updateSyncUI(); return; }
+    if (!window.cloudbase) { cloudStatus = 'sdk'; updateSyncUI(); return; }
+    try {
+      cloudApp = window.cloudbase.init({ env: CLOUD_ENV });
+      await cloudApp.auth().signInAnonymously(); // 先匿名登录，保证可调用云函数 + 稳定 per-browser 备份键
+      const params = new URLSearchParams(location.search);
+      const code = params.get('code');
+      if (code) {
+        try {
+          const r = await cloudApp.callFunction({ name: 'getUnionid', data: { code } });
+          if (r.result && r.result.ok && r.result.unionid) { cloudUid = r.result.unionid; cloudFallback = !!r.result.fallback; }
+        } catch (e) {}
+        history.replaceState(null, '', location.pathname + location.hash);
+      } else if (/MicroMessenger/i.test(navigator.userAgent) && CLOUD_MP_APPID) {
+        const redir = encodeURIComponent(location.origin + location.pathname);
+        location.replace('https://open.weixin.qq.com/connect/oauth2/authorize?appid=' + CLOUD_MP_APPID + '&redirect_uri=' + redir + '&response_type=code&scope=snsapi_base&state=lingdong#wechat_redirect');
+        return; // 会刷新页面
+      }
+      if (!cloudUid) { const u = await cloudApp.auth().currentUser(); cloudUid = u ? (u.uid || u._id) : null; }
+      cloudEnabled = !!cloudUid;
+      cloudStatus = 'idle';
+      if (cloudAuto) cloudPull();
+    } catch (e) { cloudStatus = 'error'; }
+    updateSyncUI();
+  }
+  async function cloudPull() {
+    if (!cloudEnabled) return;
+    cloudStatus = 'syncing'; updateSyncUI();
+    try {
+      const r = await cloudApp.callFunction({ name: 'pull', data: { uid: cloudUid } });
+      const d = (r && r.result) || {};
+      if (d.ok && d.data) {
+        if (!state.syncAt || d.updatedAt >= state.syncAt) {
+          state = Object.assign(defaultState(), d.data);
+          state.syncAt = d.updatedAt;
+          saveLocal();
+        }
+      }
+      cloudLast = Date.now(); cloudStatus = 'idle';
+    } catch (e) { cloudStatus = 'error'; }
+    updateSyncUI();
+    if (currentView === 'me') renderMe();
+  }
+  async function cloudPush() {
+    if (!cloudEnabled) return;
+    state.syncAt = Date.now();
+    try {
+      await cloudApp.callFunction({ name: 'push', data: { uid: cloudUid, data: state, updatedAt: state.syncAt } });
+      cloudLast = Date.now(); cloudStatus = 'idle';
+    } catch (e) { cloudStatus = 'error'; }
+    updateSyncUI();
+  }
+  function scheduleCloudPush() {
+    if (!cloudEnabled || !cloudAuto) return;
+    clearTimeout(cloudPushTimer);
+    cloudPushTimer = setTimeout(cloudPush, 1200);
+  }
+  function updateSyncUI() {
+    const dot = document.getElementById('syncDot');
+    const txt = document.getElementById('syncText');
+    const meta = document.getElementById('syncMeta');
+    const warn = document.getElementById('syncWarn');
+    if (!dot) return;
+    const map = { idle: ['ok', '已同步'], syncing: ['', '同步中…'], error: ['err', '同步失败'], noenv: ['warn', '未配置环境'], sdk: ['warn', '云 SDK 未加载'] };
+    const m = map[cloudStatus] || ['', '本地'];
+    dot.className = 'sync-dot ' + m[0];
+    txt.textContent = m[1];
+    if (cloudUid) {
+      const short = cloudUid.length > 10 ? cloudUid.slice(0, 6) + '…' + cloudUid.slice(-4) : cloudUid;
+      meta.textContent = '账号 ' + short + (cloudLast ? ' · 最近 ' + new Date(cloudLast).toLocaleTimeString('zh-CN') : '');
+    } else meta.textContent = '';
+    warn.textContent = cloudStatus === 'noenv' ? '请在 script.js 填入 CLOUD_ENV 云开发环境 ID。'
+      : cloudFallback ? '当前以 openid 同步（未绑定微信开放平台），无法跨端互通。' : '';
+  }
+
   /* ---------- 启动 ---------- */
   function init() {
     bind();
     bindSheen();
     ringSetup();
     startMarquee();
+    setupMagnetic();
+    initCloud();
+    const introEnter = document.getElementById('introEnter');
+    if (introEnter) introEnter.onclick = () => {
+      const intro = document.getElementById('intro');
+      if (!intro) return;
+      intro.classList.add('intro--out');
+      setTimeout(() => { intro.style.display = 'none'; }, 720);
+    };
     switchView('home');
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
