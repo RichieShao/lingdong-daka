@@ -623,7 +623,8 @@ select{font-family:inherit;}
   box-shadow:0 10px 24px rgba(47,141,247,.4);
 }
 .focus-btn.ghost{
-  width:48px;height:48px;font-size:22px;color:var(--muted);
+  position:absolute;top:-6px;right:-6px;z-index:3;
+  width:44px;height:44px;font-size:20px;color:var(--muted);
   background:#fff;box-shadow:var(--shadow);
 }
 /* ===== 磁吸微动（仅 hover 设备，移动端不触发） ===== */
