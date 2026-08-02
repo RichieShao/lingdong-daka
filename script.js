@@ -1069,7 +1069,7 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
   /* ---------- 云端同步（微信云开发 CloudBase Web SDK） ---------- */
   let cloudApp = null, cloudUid = null, cloudEnabled = false;
   let cloudStatus = 'idle', cloudLast = 0, cloudAuto = true, cloudFallback = false;
-  const CLOUD_ENV = '';        // ← 填云开发环境 ID
+  const CLOUD_ENV = 'richieshao-1980-d9f5588r8f7850a1';        // ← 填云开发环境 ID
   const CLOUD_MP_APPID = '';   // ← 填公众号 AppID（H5 在微信内网页授权获取 unionid 用）
   let cloudPushTimer = null;
 
