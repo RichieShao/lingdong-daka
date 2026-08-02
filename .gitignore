@@ -5,3 +5,7 @@ Thumbs.db
 
 # 工作区记忆（不纳入部署）
 .workbuddy/
+
+# 依赖与锁文件（云函数部署时由云端按 package.json 安装，无需提交）
+node_modules/
+package-lock.json

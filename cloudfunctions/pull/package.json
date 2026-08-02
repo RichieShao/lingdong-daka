@@ -4,6 +4,6 @@
   "description": "灵动打卡 H5 · 拉取用户云端数据",
   "main": "index.js",
   "dependencies": {
-    "@cloudbase/node-sdk": "^2.0.0"
+    "@cloudbase/node-sdk": "^2.11.0"
   }
 }

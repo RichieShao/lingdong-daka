@@ -4,6 +4,6 @@
   "description": "灵动打卡 H5 · 微信网页 OAuth code 换取 unionid",
   "main": "index.js",
   "dependencies": {
-    "@cloudbase/node-sdk": "^2.0.0"
+    "@cloudbase/node-sdk": "^2.11.0"
   }
 }
