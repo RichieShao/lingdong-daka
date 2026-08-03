@@ -166,7 +166,7 @@ select{font-family:inherit;}
 .hp-avatar-ph .ico{width:24px;height:24px;color:rgba(255,255,255,.9);}
 .hp-info{min-width:0;flex:1;}
 .hp-greet-row{display:flex;align-items:center;gap:8px;min-width:0;}
-.greet-title{font-size:18px;font-weight:800;color:#fff;text-shadow:0 1px 8px rgba(15,23,42,.18);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.greet-title{font-size:18px;font-weight:800;color:#fff;text-shadow:0 1px 8px rgba(15,23,42,.18);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:calc(100vw - 160px);}
 .greet-sub{font-size:12px;color:rgba(255,255,255,.85);margin-top:2px;}
 .hp-edit{
   flex:0 0 auto;background:rgba(255,255,255,.22);border:none;color:#fff;
