@@ -983,14 +983,19 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
     // 科目筛选（任务）
     document.getElementById('taskFilter').onchange = renderTasks;
     document.getElementById('historyFilter').onchange = renderMe;
-    // 云端同步
-    const syncNow = document.getElementById('syncNow');
-    if (syncNow) syncNow.onclick = () => {
-      if (!cloudEnabled) { toast(cloudStatus === 'noenv' ? '未配置云端环境' : '云端尚未就绪，请稍候'); return; }
-      cloudPull();
+    // 数据备份（本地）
+    const backupNow = document.getElementById('backupNow');
+    if (backupNow) backupNow.onclick = exportBackup;
+    const backupImport = document.getElementById('backupImport');
+    const backupFile = document.getElementById('backupFile');
+    if (backupImport) backupImport.onclick = () => { if (backupFile) backupFile.click(); };
+    if (backupFile) backupFile.onchange = (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (f) importBackup(f);
+      e.target.value = '';
     };
-    const syncAuto = document.getElementById('syncAuto');
-    if (syncAuto) syncAuto.onchange = (e) => { cloudAuto = e.target.checked; if (cloudAuto) cloudPull(); };
+    const backupHistoryBtn = document.getElementById('backupHistoryBtn');
+    if (backupHistoryBtn) backupHistoryBtn.onclick = openBackupHistory;
 
     // 首页 / 打卡页：科目芯片点击 → 打卡
     document.getElementById('view-home').addEventListener('click', e => {
@@ -1075,9 +1080,20 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
 
   async function initCloud() {
     if (!CLOUD_ENV) { cloudStatus = 'noenv'; updateSyncUI(); return; }
-    if (!window.cloudbase) { cloudStatus = 'sdk'; updateSyncUI(); return; }
+    let cloudbase = window.cloudbase;
+    if (!cloudbase) {
+      try {
+        // 动态加载 CloudBase Web SDK：jsDelivr +esm 端点自动把整包（含全部子依赖）打包成浏览器可直接 import 的 ESM，
+        // 默认导出即 cloudbase 工厂函数。不再依赖已失效的 UMD CDN（@cloudbase/js-sdk 本就无 UMD 全局构建）。
+        const mod = await import('https://cdn.jsdelivr.net/npm/@cloudbase/js-sdk@1.7.4/+esm');
+        cloudbase = mod.default || mod.cloudbase || mod;
+        window.cloudbase = cloudbase;
+      } catch (e) {
+        cloudStatus = 'sdk'; updateSyncUI(); return;
+      }
+    }
     try {
-      cloudApp = window.cloudbase.init({ env: CLOUD_ENV });
+      cloudApp = cloudbase.init({ env: CLOUD_ENV });
       await cloudApp.auth().signInAnonymously(); // 先匿名登录，保证可调用云函数 + 稳定 per-browser 备份键
       const params = new URLSearchParams(location.search);
       const code = params.get('code');
@@ -1149,6 +1165,102 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
       : cloudFallback ? '当前以 openid 同步（未绑定微信开放平台），无法跨端互通。' : '';
   }
 
+  /* ---------- 本地备份（导出 / 导入 JSON，免云端、零成本） ---------- */
+  function exportBackup() {
+    try {
+      const payload = { app: 'lingdong-daka', version: 1, exportedAt: new Date().toISOString(), data: state };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const d = new Date();
+      const stamp = d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+      const fname = 'lingdong-daka-backup-' + stamp + '.json';
+      a.href = url; a.download = fname;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      const meta = document.getElementById('backupMeta');
+      if (meta) meta.textContent = '已导出 · ' + d.toLocaleString('zh-CN');
+      addBackupHistory('export', fname);
+      toast('备份已导出');
+    } catch (e) { toast('导出失败'); }
+  }
+  function importBackup(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onerror = () => toast('读取文件失败');
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        const data = parsed && parsed.data ? parsed.data : parsed;
+        if (!data || !Array.isArray(data.subjects)) { toast('备份文件格式不正确'); return; }
+        confirmDialog('导入备份', '将用该备份覆盖当前全部数据，且不可恢复。确定继续？', () => {
+          state = Object.assign(defaultState(), data);
+          if (!Array.isArray(state.gifts)) state.gifts = defaultGifts();
+          if (!state.focus) state.focus = { date: '', todayCount: 0, total: 0 };
+          if (!state.userName) state.userName = '同学';
+          if (!state.avatar) state.avatar = '';
+          saveLocal();
+          try { renderHome(); renderCheckin(); renderTasks(); renderCountdown(); renderMe(); } catch (e) {}
+          const meta = document.getElementById('backupMeta');
+          if (meta) meta.textContent = '已导入 · ' + new Date().toLocaleString('zh-CN');
+          addBackupHistory('import', file.name);
+          toast('备份已导入');
+        });
+      } catch (e) { toast('解析失败：不是有效的备份文件'); }
+    };
+    reader.readAsText(file);
+  }
+
+  /* ---------- 数据备份历史（独立 localStorage，与 state 分离，导入/换机均保留） ---------- */
+  const BK_HISTORY_KEY = 'lingdong-daka-backup-history';
+  const BK_HISTORY_MAX = 30;
+  function loadBackupHistory() {
+    try { const a = JSON.parse(localStorage.getItem(BK_HISTORY_KEY) || '[]'); return Array.isArray(a) ? a : []; }
+    catch (e) { return []; }
+  }
+  function addBackupHistory(type, name) {
+    const list = loadBackupHistory();
+    list.unshift({ type, name, at: new Date().toISOString() });
+    while (list.length > BK_HISTORY_MAX) list.pop();
+    try { localStorage.setItem(BK_HISTORY_KEY, JSON.stringify(list)); } catch (e) {}
+  }
+  function openBackupHistory() {
+    const mask = document.getElementById('sheetMask');
+    const body = document.getElementById('sheetBody');
+    const title = document.getElementById('sheetTitle');
+    if (!mask || !body || !title) return;
+    title.textContent = '备份历史记录';
+    body.textContent = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'backup-history';
+    const list = loadBackupHistory();
+    if (!list.length) {
+      const empty = document.createElement('div');
+      empty.className = 'bh-empty';
+      empty.textContent = '暂无备份记录';
+      wrap.appendChild(empty);
+    } else {
+      list.forEach(it => {
+        const row = document.createElement('div');
+        row.className = 'bh-item';
+        const tag = document.createElement('span');
+        tag.className = 'bh-tag ' + (it.type === 'import' ? 'import' : 'export');
+        tag.textContent = it.type === 'import' ? '导入' : '导出';
+        const name = document.createElement('span');
+        name.className = 'bh-name';
+        name.textContent = it.name || '';
+        const time = document.createElement('span');
+        time.className = 'bh-time';
+        const dt = new Date(it.at);
+        time.textContent = isNaN(dt) ? '' : dt.toLocaleString('zh-CN');
+        row.appendChild(tag); row.appendChild(name); row.appendChild(time);
+        wrap.appendChild(row);
+      });
+    }
+    body.appendChild(wrap);
+    mask.classList.add('show');
+  }
+
   /* ---------- 启动 ---------- */
   function init() {
     bind();
@@ -1156,7 +1268,7 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
     ringSetup();
     startMarquee();
     setupMagnetic();
-    initCloud();
+    // 注：云端同步（CloudBase）已改为本地数据备份，不再启动时初始化。如需升级自动云同步，恢复 initCloud() 调用并补齐云端 4 步。
     const introEnter = document.getElementById('introEnter');
     if (introEnter) introEnter.onclick = () => {
       const intro = document.getElementById('intro');
