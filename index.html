@@ -64,9 +64,17 @@
         <button class="search-go" id="searchGo">搜索</button>
       </div>
       <div class="header-row">
-        <div class="header-greet">
-          <div class="greet-title" id="greetTitle">早上好，同学</div>
-          <div class="greet-sub">今天也要元气满满地打卡哦</div>
+        <div class="header-profile">
+          <div class="hp-avatar" id="hpAvatar"><svg class="ico" aria-hidden="true"><use href="#icon-camera"/></svg></div>
+          <input type="file" id="avatarInput" accept="image/*" hidden>
+          <div class="hp-info">
+            <div class="hp-greet-row">
+              <span class="greet-title" id="greetTitle">早上好，同学</span>
+              <button class="hp-edit" id="hpEdit">改名</button>
+            </div>
+            <div class="greet-sub" id="greetSub">今天也要元气满满地打卡哦</div>
+            <div class="hp-meta" id="hpMeta">今日 0/0 · 连续 0 天</div>
+          </div>
         </div>
         <div class="points-pill" id="pointsPill" title="积分余额">
           <svg class="ico ico-star" aria-hidden="true"><use href="#icon-star"/></svg><span id="pointsBalance">0</span>
@@ -146,25 +154,6 @@
 
       <!-- 我的 -->
       <section class="view" id="view-me">
-        <!-- 个人概览 + 成就 -->
-        <div class="checkin-profile card-glass">
-          <div class="cp-main">
-            <div class="cp-avatar" id="cpAvatar"><svg class="ico" aria-hidden="true"><use href="#icon-user"/></svg></div>
-            <input type="file" id="avatarInput" accept="image/*" hidden>
-            <div class="cp-text">
-              <div class="cp-name-row">
-                <div class="cp-name" id="cpName">同学</div>
-                <button class="cp-edit" id="cpEdit">改名</button>
-              </div>
-              <div class="cp-sub" id="cpSub">今日已打卡 0 / 0</div>
-            </div>
-          </div>
-          <div class="cp-streak">
-            <div class="cp-streak-num" id="cpStreak">0</div>
-            <div class="cp-streak-lab">连续打卡</div>
-          </div>
-        </div>
-
         <!-- 数据备份 -->
         <div class="block sync-card" id="syncCard">
           <div class="block-head">

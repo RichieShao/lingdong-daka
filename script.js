@@ -26,6 +26,25 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
   const CHECKIN_BASE = 10;
   const TASK_POINTS = 20;
 
+  // 每日打气语（按日期取模轮换，同一天固定、每天不同）
+  const CHEER_LINES = [
+    '今天也要元气满满地打卡哦',
+    '坚持打卡，未来可期',
+    '每一笔记录都是成长的足迹',
+    '今日事今日毕，冲鸭',
+    '小步快跑，每天进步一点点',
+    '自律即自由，开始了就别停',
+    '今天的努力，明天的实力',
+    '打卡不停，进步不止',
+    '你比昨天更接近目标了',
+    '稳住节奏，持续输出',
+    '别小看每天的一小步',
+    '日拱一卒，功不唐捐',
+    '把今天过好，未来不会差',
+    '与其临渊羡鱼，不如退而打卡',
+    '学海无涯，打卡作舟',
+  ];
+
   // 走马灯静态种子（语文/数学/英语：名言、公式、语法）
   const MARQUEE = [
     { subject: '语文', items: [
@@ -286,6 +305,11 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
     const g = h < 11 ? '早上好' : h < 14 ? '中午好' : h < 18 ? '下午好' : '晚上好';
     const gt = document.getElementById('greetTitle');
     if (gt) gt.textContent = g + '，' + (state.userName || '同学');
+    // 每日打气语（按日期轮换，同一天固定）
+    const gs = document.getElementById('greetSub');
+    if (gs) gs.textContent = CHEER_LINES[new Date().getDate() % CHEER_LINES.length];
+    // 首页 header 个人信息（头像、打卡概况）
+    renderProfile();
     // 概览
     const today = todayStr();
     const todayCIs = state.checkins.filter(c => c.date === today);
@@ -364,17 +388,17 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
   function renderProfile() {
     const today = todayStr();
     const done = state.checkins.filter(c => c.date === today).length;
-    const nm = document.getElementById('cpName'); if (nm) nm.textContent = state.userName || '同学';
-    const sub = document.getElementById('cpSub'); if (sub) sub.textContent = '今日已打卡 ' + done + ' / ' + state.subjects.length;
-    const st = document.getElementById('cpStreak'); if (st) st.textContent = state.streak;
+    // 首页 header 个人信息行
+    const hpMeta = document.getElementById('hpMeta');
+    if (hpMeta) hpMeta.textContent = '今日 ' + done + '/' + state.subjects.length + ' · 连续 ' + state.streak + ' 天';
     renderAvatar();
   }
   function renderAvatar() {
-    const av = document.getElementById('cpAvatar'); if (!av) return;
+    const av = document.getElementById('hpAvatar'); if (!av) return;
     if (state.avatar) {
       av.innerHTML = '<img src="' + state.avatar + '" alt="头像">';
     } else {
-      av.innerHTML = '<span class="cp-avatar-edit" aria-hidden="true">' + iconOf('#icon-camera', '') + '</span>';
+      av.innerHTML = '<span class="hp-avatar-ph" aria-hidden="true">' + iconOf('#icon-camera', '') + '</span>';
     }
     av.onclick = () => { const inp = document.getElementById('avatarInput'); if (inp) inp.click(); };
   }
@@ -979,6 +1003,9 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
       resizeImage(f, 256, url => { state.avatar = url; save(); renderAvatar(); toast('头像已更新'); });
       e.target.value = '';
     });
+    // 首页 header 改名按钮
+    const hpEdit = document.getElementById('hpEdit');
+    if (hpEdit) hpEdit.onclick = editName;
 
     // 科目筛选（任务）
     document.getElementById('taskFilter').onchange = renderTasks;
@@ -1016,7 +1043,6 @@ var PY_DICT="ydkqsxhwzssxjbymgcczqpssqbycdscdqldylybsgjgyqzjjfgcclzzbwdwzjljpfyy
     });
     // 我的：礼品兑换 / 编辑 / 删除 + 任务点击
     document.getElementById('view-me').addEventListener('click', e => {
-      const cp = e.target.closest('#cpEdit'); if (cp) { editName(); return; }
       const r = e.target.closest('[data-redeem]'); if (r) { redeemGift(r.dataset.redeem); return; }
       const ed = e.target.closest('[data-gift-edit]'); if (ed) { giftSheet(ed.dataset.giftEdit); return; }
       const dl = e.target.closest('[data-gift-del]'); if (dl) { deleteGift(dl.dataset.giftDel); return; }
